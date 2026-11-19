@@ -256,7 +256,7 @@ async function addPieces(list){ // list: [{id,title,lesson,ord,xml}]
   const entries=[];let added=0;
   for(const p of list){
     const old=S.songs[p.id];
-    S.songs[p.id]=Object.assign({id:p.id,bpm:60,best:0,bars:{},last:0,runs:0},old||{},{title:p.title,lesson:p.lesson??null,ord:p.ord??0});
+    S.songs[p.id]=Object.assign({id:p.id,bpm:60,best:0,bars:{},last:0,runs:0},old||{},{title:p.title,lesson:p.lesson??null,ord:p.ord??0,conf:p.conf||'',page:p.page||null});
     if(!S.order.includes(p.id)){S.order.push(p.id);added++}
     entries.push([p.id,p.xml]);delete CACHE[p.id];
   }
@@ -793,7 +793,7 @@ function renderHome(){
   $('#lessonTitle').textContent=L==null?'내 악보':L==='none'?'기타 악보':`Lesson ${L}`;
   $('#lPrev').classList.toggle('hide',L==null||L==='none');$('#lNext').classList.toggle('hide',L==null||L==='none');
   $('#songs').innerHTML=ids.map(id=>{const s=S.songs[id];
-    return `<div class="song ${id===S.cur?'sel':''}"><div class="t"><b>${s.title.replace(/^Lesson \d+ · /,'')}</b><span class="mute">템포 ${s.bpm} · 깨끗하게 된 최고 ${s.best||'-'} · ${ago(s.last)}</span></div><button data-open="${id}" class="pri">열기</button></div>`}).join('')||'<p class="mute">악보가 없어요. 아래에서 가져와 주세요.</p>';
+    return `<div class="song ${id===S.cur?'sel':''}"><div class="t"><b>${s.title.replace(/^Lesson \d+ · /,'')}</b><span class="mute">템포 ${s.bpm} · 깨끗하게 된 최고 ${s.best||'-'} · ${ago(s.last)}${s.page?` · 교재 PDF ${s.page}쪽`:''}${s.conf&&s.conf!=='high'?' · <span class="tag" title="옮겨 적을 때 애매한 곳이 있었어요. 이상하면 알려 주세요">확인 필요</span>':''}</span></div><button data-open="${id}" class="pri">열기</button></div>`}).join('')||'<p class="mute">악보가 없어요. 아래에서 가져와 주세요.</p>';
   const ls=lessonsList();
   $('#lessons').innerHTML=ls.map(l=>{const any=S.order.some(id=>S.songs[id].lesson===l&&S.songs[id].best);return `<button class="${l===L?'on':''} ${any?'done':''}" data-l="${l}">${l}</button>`}).join('')+(S.order.some(id=>S.songs[id].lesson==null)?`<button data-l="none">기타</button>`:'');
   $('#calTxt').textContent=S.calibDone?`지금 보정값 ${Math.round(S.calib*1000)}ms`:'아직 안 함 (기본 80ms). 처음 한 번 해 주세요.';
@@ -845,14 +845,14 @@ $('#file').onchange=async e=>{
       if(head==='80,75'){const txt=await unzipMXL(buf);const p=parseXML(txt,f.name.replace(/\.[^.]+$/,''));list.push({id:'u:'+hashStr(p.title+txt.length),title:p.title,lesson:+p.misc.lesson||null,xml:txt});continue}
       const txt=new TextDecoder().decode(buf).replace(/^\uFEFF/,'');
       if(/^\s*\{/.test(txt)){const pack=JSON.parse(txt);if(!Array.isArray(pack.pieces))throw new Error('교재 묶음 형식이 아니에요');
-        pack.pieces.forEach((p,i)=>list.push({id:(pack.prefix||'pk:')+p.id,title:p.title,lesson:p.lesson??null,ord:p.ord??i,xml:p.xml}));msgs.push(`✓ ${pack.name||'묶음'}: ${pack.pieces.length}곡`);continue}
+        pack.pieces.forEach((p,i)=>list.push({id:(pack.prefix||'pk:')+p.id,title:p.title,lesson:p.lesson??null,ord:p.ord??i,xml:p.xml,conf:p.confidence,page:p.page}));msgs.push(`✓ ${pack.name||'묶음'}: ${pack.pieces.length}곡`);continue}
       const p=parseXML(txt,f.name.replace(/\.[^.]+$/,''));
       const id=p.misc.id?'hk:'+p.misc.id:'u:'+hashStr(p.title+txt.length);
       list.push({id,title:p.title,lesson:+p.misc.lesson||null,ord:0,xml:txt});msgs.push(`✓ ${p.title}`);
     }catch(err){msgs.push(`✗ ${f.name}: ${err.message}`)}
   }
   if(list.length){const n=await addPieces(list);msgs.push(`새로 ${n}곡, 갱신 ${list.length-n}곡`);if(S.songs['builtin:scale']&&S.order.length>1){S.order=S.order.filter(x=>x!=='builtin:scale');delete S.songs['builtin:scale']}
-    const firstL=S.songs[list[0].id].lesson;if(firstL!=null&&S.lesson==null)S.lesson=firstL;save()}
+    save()}
   renderHome();alert(msgs.slice(0,12).join('\n'));e.target.value='';
 };
 $('#songs').onclick=e=>{const o=e.target.dataset.open;if(o)openSong(o)};
