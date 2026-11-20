@@ -66,7 +66,7 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
   <div class="card">
     <h2>오늘의 15분</h2>
     <ol class="plan" id="plan"></ol>
-    <p class="why">악보를 먼저 읽고(속으로 불기) → 듣고 비교하고 → 불기. 짧게 쪼개 될 듯 말 듯한 템포에서, 섞어서, 매일 조금씩.</p>
+    <p class="why">단계 연습은 순서를 고를 수 있어요(추천: 읽기 → 듣기 → 불기). 짧게 쪼개 될 듯 말 듯한 템포에서, 섞어서, 매일 조금씩.</p>
   </div>
   <div class="card">
     <div class="row"><h2 style="margin:0;flex:1" id="lessonTitle">레슨</h2><button id="lPrev">‹</button><button id="lNext">›</button></div>
@@ -564,7 +564,7 @@ function loop(){
 
 /* ================= 모드 ================= */
 const MODES={
-  rlp:{name:'읽고·듣고·불기',why:'① 소리 없이 악보를 따라가며 밸브를 누르고 속으로 불어요(내가 먼저 예측) ② 듣고 내 예측과 비교 ③ 불어서 채점. 듣기 전에 스스로 떠올려 본 것이 오래 남아요.'},
+  rlp:{name:'단계 연습',why:''},
   drill:{name:'구간 훈련',why:'가장 약한 조각(8박)을 3분 동안. 매 판 시작 전 박자 동안 그 조각을 눈으로 먼저 읽어요. 90%↑ 템포 +4, 70%↓ −4로 늘 될 듯 말 듯하게. 3·4번째 판은 외워서·메트로놈 없이.'},
   game:{name:'끝까지',why:'고른 구간을 멈추지 않고 끝까지. 예상 정확도를 먼저 찍으면 끝나고 실제와 비교해 줘요.'},
   fluency:{name:'유창성',why:'이미 되는 곡을 빠르게: 깨끗하게 된 템포 → +8% → +15% 세 판, 틀려도 멈추지 않기. 기록은 1분에 맞힌 음 수.'},
@@ -572,12 +572,21 @@ const MODES={
   listen:{name:'듣기만',why:'채점 없이 소리만. 읽고·듣고·불기의 ②만 따로 할 때.'}
 };
 let mode='rlp';
+const FLOWS={
+  rlp:{name:'읽기→듣기→불기',steps:['read','listen','play'],why:'추천. 소리 없이 먼저 읽고(내 예측) → 듣고 비교 → 불기. 스스로 떠올려 본 것이 오래 남아요.'},
+  lrp:{name:'듣기→읽기→불기',steps:['listen','read','play'],why:'처음 보는 리듬이 어려울 때. 먼저 귀에 넣고, 그 소리를 떠올리며 악보를 읽은 뒤 불기.'},
+  rp:{name:'읽기→불기',steps:['read','play'],why:'듣지 않고 악보만 보고 불기. 초견(처음 보고 바로 읽기) 연습.'},
+  lp:{name:'듣기→불기',steps:['listen','play'],why:'듣고 바로 따라 불기. 귀로 익히는 연습.'},
+  p:{name:'바로 불기',steps:['play'],why:'준비 없이 바로 불기. 이미 익숙한 곡 점검용.'}
+};
 function renderModes(){
   $('#modes').innerHTML=Object.entries(MODES).map(([k,v])=>`<button class="chip ${k===mode?'on':''}" data-m="${k}">${v.name}</button>`).join('');
-  $('#modeWhy').textContent=MODES[mode].why;
+  const fl=FLOWS[S.opts.flow||'rlp'];
+  $('#modeWhy').innerHTML=mode==='rlp'?`<span class="row" style="gap:6px;margin-bottom:4px">순서: ${Object.entries(FLOWS).map(([k,v])=>`<button class="chip ${k===(S.opts.flow||'rlp')?'on':''}" data-flow="${k}">${v.name}</button>`).join('')}</span><br>${fl.why}`:MODES[mode].why;
   $('#predBox').classList.toggle('hide',!(mode==='game'||mode==='fluency'));
 }
 $('#modes').onclick=e=>{const m=e.target.dataset.m;if(m&&!RUN&&!stepBusy){mode=m;renderModes()}};
+$('#modeWhy').onclick=e=>{const f=e.target.dataset.flow;if(f&&!RUN&&!stepBusy){S.opts.flow=f;save();renderModes()}};
 let pred=null;
 function renderPred(){$('#predBox').innerHTML='<span class="mute">이번 판 예상 정확도:</span>'+[50,60,70,80,90,100].map(p=>`<button class="chip ${pred===p?'on':''}" data-p="${p}">${p}</button>`).join('')}
 $('#predBox').onclick=e=>{const p=+e.target.dataset.p;if(p){pred=pred===p?null:p;renderPred()}};
@@ -624,31 +633,36 @@ async function go(){
   if(S.opts.view==='sheet')await renderSheet(sg);
   try{
     if(mode==='rlp'){
-      const bars=srcBarsIn(sg,from,to);
-      // ① 읽기
-      for(;;){
-        stepPanel(`<h3>① 읽기 · 소리 없이</h3><div class="mute">파란 음표를 따라가며 밸브를 누르고 속으로 불어 보세요. 소리는 박자만 나요.</div>`);
-        setStatus('읽는 중');
-        await runSegment({sg,from,to,bpm:base,guide:false,score:false,clicks:true,label:'읽기'});
-        if(STOP)break;
-        const a=await askStep({title:'읽어 보니 어땠어요?',text:'막히거나 자신 없던 마디를 눌러 주세요(없으면 그냥 다음).',bars,buttons:[['next','② 들어 보기'],['again','한 번 더 읽기']]});
-        if(a.k==='again')continue;extra.hard=a.bars;break;
-      }
-      // ② 듣기
-      for(;!STOP;){
-        stepPanel(`<h3>② 듣기 · 내 예측과 비교</h3><div class="mute">머릿속으로 그린 소리와 같은지 들어 보세요.</div>`);
-        setStatus('듣는 중');
-        await runSegment({sg,from,to,bpm:base,guide:true,score:false,clicks:opt.clicks,label:'듣기'});
-        if(STOP)break;
-        const a=await askStep({title:'예측과 비교하면?',text:'다르게 들린 마디가 있으면 눌러 주세요.',bars,choices:['거의 같았어요','몇 군데 달랐어요','많이 달랐어요'],buttons:[['next','③ 불기 (채점)'],['again','한 번 더 듣기']]});
-        if(a.k==='again')continue;extra.diffBars=a.bars;extra.diff=a.choice;break;
-      }
-      // ③ 불기
-      if(!STOP){
-        stepPanel(`<h3>③ 불기 · 채점</h3><div class="mute">이제 불어요. 박자 세는 동안 첫 음 운지를 준비하세요.</div>`);
-        setStatus('부는 중');
-        const r=await runSegment({sg,from,to,bpm:base,guide:S.opts.guide,score:true,clicks:opt.clicks,fade:opt.fade,label:'불기'});
-        if(r){r.extra=extra;runs.push(r)}
+      const bars=srcBarsIn(sg,from,to);const flow=FLOWS[S.opts.flow||'rlp'].steps;const total=flow.length;let heard=false,readDone=false;
+      for(let si=0;si<total&&!STOP;si++){
+        const st=flow[si],no=`${'①②③'[si]}`,last=si===total-1;
+        const nextName=last?'':{read:'읽기',listen:'듣기',play:'불기 (채점)'}[flow[si+1]];
+        if(st==='read'){
+          for(;;){
+            stepPanel(`<h3>${no} 읽기 · 소리 없이</h3><div class="mute">${heard?'방금 들은 소리를 떠올리며 ':''}파란 음표를 따라가며 밸브를 누르고 속으로 불어 보세요. 소리는 박자만 나요.</div>`);
+            setStatus('읽는 중');
+            await runSegment({sg,from,to,bpm:base,guide:false,score:false,clicks:true,label:'읽기'});
+            if(STOP)break;
+            const a=await askStep({title:'읽어 보니 어땠어요?',text:'막히거나 자신 없던 마디를 눌러 주세요(없으면 그냥 다음).',bars,buttons:[['next',`${'①②③'[si+1]||''} ${nextName}`],['again','한 번 더 읽기']]});
+            if(a.k==='again')continue;extra.hard=a.bars;readDone=true;break;
+          }
+        }else if(st==='listen'){
+          for(;!STOP;){
+            stepPanel(`<h3>${no} 듣기${readDone?' · 내 예측과 비교':''}</h3><div class="mute">${readDone?'머릿속으로 그린 소리와 같은지 들어 보세요.':'악보를 보면서 소리와 박자를 귀에 넣어요.'}</div>`);
+            setStatus('듣는 중');
+            await runSegment({sg,from,to,bpm:base,guide:true,score:false,clicks:opt.clicks,label:'듣기'});
+            if(STOP)break;heard=true;
+            const a=readDone
+              ?await askStep({title:'예측과 비교하면?',text:'다르게 들린 마디가 있으면 눌러 주세요.',bars,choices:['거의 같았어요','몇 군데 달랐어요','많이 달랐어요'],buttons:[['next',`${'①②③'[si+1]||''} ${nextName}`],['again','한 번 더 듣기']]})
+              :await askStep({title:'들어 봤어요',text:'익숙해질 때까지 더 들어도 돼요.',buttons:[['next',`${'①②③'[si+1]||''} ${nextName}`],['again','한 번 더 듣기']]});
+            if(a.k==='again')continue;if(readDone){extra.diffBars=a.bars;extra.diff=a.choice}break;
+          }
+        }else{
+          stepPanel(`<h3>${total>1?no+' ':''}불기 · 채점</h3><div class="mute">박자 세는 동안 첫 음 운지를 준비하세요.</div>`);
+          setStatus('부는 중');
+          const r=await runSegment({sg,from,to,bpm:base,guide:S.opts.guide,score:true,clicks:opt.clicks,fade:opt.fade,label:FLOWS[S.opts.flow||'rlp'].name});
+          if(r){if(readDone)r.extra=extra;runs.push(r)}
+        }
       }
       stepPanel('');
     }else if(mode==='listen'){
@@ -739,7 +753,7 @@ function nextTip(runs){
   else if(avg>=0.9)tips.push('90% 넘었어요. 템포를 4 올리거나 "외워서"를 켜 보세요.');
   else if(avg<0.6)tips.push('60% 아래예요. 템포를 8 내리고, 읽고·듣고·불기로 약한 마디만 다시 해 보세요.');
   else tips.push('지금이 배우기 좋은 난이도(될 듯 말 듯)예요. 같은 템포로 한두 번 더.');
-  if(mode==='rlp')tips.push('몰랐던 약점이 있으면 그 마디를 구간 훈련으로. 걱정했지만 괜찮았던 곳은 다음엔 덜 걱정해도 돼요.');
+  if(mode==='rlp'&&runs.some(r=>r.extra))tips.push('몰랐던 약점이 있으면 그 마디를 구간 훈련으로. 걱정했지만 괜찮았던 곳은 다음엔 덜 걱정해도 돼요.');
   if(wrong>=3)tips.push('다른 음이 자주 났어요: 운지보다 입술(음 높이)일 가능성이 커요. 그 음을 길게 불어 "지금 내 음"으로 맞춰 보세요.');
   if(offs.length>=5){const m=[...offs].sort((a,b)=>a-b)[offs.length>>1];if(Math.abs(m)>0.08)tips.push(`전체가 ${Math.round(Math.abs(m)*1000)}ms ${m>0?'늦어요':'빨라요'}. 계속 그러면 박자 보정을 다시 해 주세요.`)}
   return tips.join(' ');
@@ -804,10 +818,10 @@ function renderPlan(ids){
   const fresh=ids.find(id=>!S.songs[id].runs),weakId=ids.filter(id=>S.songs[id].runs).sort((a,b)=>(S.songs[a].best?1:0)-(S.songs[b].best?1:0))[0];
   const fam=S.order.map(id=>S.songs[id]).filter(s=>s.best).sort((a,b)=>b.last-a.last)[0];
   if(weakId)items.push(['구간 훈련 3분',`${short(S.songs[weakId].title)}: 가장 약한 8박`,'drill',weakId]);
-  if(fresh)items.push(['읽고·듣고·불기',`${short(S.songs[fresh].title)}: 처음 보는 곡은 읽기부터`,'rlp',fresh]);
+  if(fresh)items.push(['단계 연습',`${short(S.songs[fresh].title)}: ${FLOWS[S.opts.flow||'rlp'].name}`,'rlp',fresh]);
   if(lessonsList().length>1||ids.length>1)items.push(['섞기 2분','이 레슨과 지난 3개 레슨 조각을 섞어서','mix',ids[0]]);
   if(fam)items.push(['유창성 3판',`${short(fam.title)}: 템포 ${fam.best}부터 빠르게`,'fluency',fam.id]);
-  if(!items.length&&ids[0])items.push(['읽고·듣고·불기','처음 보는 곡은 읽기부터','rlp',ids[0]]);
+  if(!items.length&&ids[0])items.push(['단계 연습',FLOWS[S.opts.flow||'rlp'].name,'rlp',ids[0]]);
   $('#plan').innerHTML=items.slice(0,4).map(([a,b,m,id])=>`<li><b>${a}</b> <span class="mute">${b}</span><button class="chip" data-go="${m}" data-id="${id||''}">바로</button></li>`).join('');
 }
 function renderOpts(){
