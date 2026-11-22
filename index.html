@@ -49,7 +49,8 @@ canvas{display:block;width:100%;height:270px;touch-action:none}
 select{font:inherit;padding:5px;border-radius:8px;border:1px solid var(--line);background:#fff}
 .modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .bar1{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;flex:1;background:#ecebe5;border-radius:12px;padding:3px}
+.drow.dim .rng,.drow.dim #rangeAll,.drow.dim #oLoop{opacity:.35;pointer-events:none}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;flex:1;background:#ecebe5;border-radius:12px;padding:3px}
 .seg button{white-space:nowrap;border-radius:9px;padding:8px 2px;font-size:13.5px;background:transparent;border-color:transparent;color:var(--mute)}
 .seg button.on{background:var(--acc);color:#fff;font-weight:600}
 .seg .more{border:1px dashed var(--line)}
@@ -94,9 +95,8 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
 <!-- HOME -->
 <section id="home">
   <div class="card">
-    <h2>오늘의 15분</h2>
+    <h2>오늘</h2>
     <ol class="plan" id="plan"></ol>
-    <p class="why">단계 연습은 순서를 고를 수 있어요(추천: 읽기 → 듣기 → 불기). 짧게 쪼개 될 듯 말 듯한 템포에서, 섞어서, 매일 조금씩.</p>
   </div>
   <div class="card">
     <div class="row"><h2 style="margin:0;flex:1" id="lessonTitle">레슨</h2><button id="lPrev">‹</button><button id="lNext">›</button></div>
@@ -730,13 +730,11 @@ function finishWait(){
 
 /* ================= 모드 ================= */
 const MODES={
-  rlp:{name:'단계 연습',short:'',why:'새 곡·새 마디 익히기. 순서를 골라요(읽기·듣기·불기, 바로 불기, 듣기만).'},
-  tune:{name:'음 맞추기',short:'박자 없이 맞는 음을 내면 다음 음으로 · <b style="color:#dc2626">빨강</b> 더 높게 · <b style="color:#2563eb">파랑</b> 더 낮게',why:'음높이(입술)만 따로. 노란 칸의 음을 맞게 내서 잠깐 유지하면 다음 음.'},
-  drill:{name:'구간 훈련',short:'가장 약한 8박을 3분 · 잘 되면 +4, 안 되면 −4로 템포 자동',why:'틀리는 곳 고치기. 될 듯 말 듯한 템포를 앱이 맞춰 줘요. 3·4번째 판은 외워서·메트로놈 없이.'},
-  fluency:{name:'유창성',short:'이미 되는 곡을 멈추지 않고 점점 빠르게 3판 · 기록: 1분에 맞힌 음',why:'이미 되는 곡을 생각 없이 술술 나오게. 깨끗하게 된 템포 → +8% → +15%, 틀려도 멈추지 않기.'},
-  mix:{name:'섞기',short:'이 레슨과 지난 3개 레슨의 8박 조각을 뒤섞어 바로 불기',why:'오래 남기기. 같은 걸 이어서 할 때보다 당장은 어렵지만 1~2주 뒤에 더 잘 남아요.'}
+  lp:{name:'듣고 불기',short:'고른 마디를 먼저 듣고 → 따라 불기 (채점). 반복을 켜면 듣기·불기를 계속 번갈아요.',why:'귀로 먼저 넣고 바로 따라 불기'},
+  p:{name:'바로 불기',short:'듣지 않고 바로 불기 (채점). 반복·템포 자동과 같이 쓰면 템포 올리기 연습.',why:'준비 없이 바로'},
+  test:{name:'테스트',short:'곡 전체를 한 번, 가이드 없이. 결과가 기록으로 남아요.',why:'혼자 측정'}
 };
-let mode='rlp';
+let mode='lp';
 const FLOWS={
   rlp:{name:'읽기→듣기→불기',steps:['read','listen','play'],why:'추천. 소리 없이 먼저 읽고(내 예측) → 듣고 비교 → 불기. 스스로 떠올려 본 것이 오래 남아요.'},
   lrp:{name:'듣기→읽기→불기',steps:['listen','read','play'],why:'처음 보는 리듬이 어려울 때. 먼저 귀에 넣고, 그 소리를 떠올리며 악보를 읽은 뒤 불기.'},
@@ -746,11 +744,11 @@ const FLOWS={
   l:{name:'듣기만',steps:['listen'],why:'채점 없이 소리만 들어요.'}
 };
 function renderModes(){
-  if(!MODES[mode])mode='rlp';
+  if(!MODES[mode])mode='lp';
   $('#modes').innerHTML=Object.entries(MODES).map(([k,v])=>`<button class="${k===mode?'on':''}" data-m="${k}" title="${v.why}">${v.name}</button>`).join('');
-  const fl=S.opts.flow||'rlp';
-  $('#modeWhy').innerHTML=mode==='rlp'?`순서 <select id="flowSel">${Object.entries(FLOWS).map(([k,v])=>`<option value="${k}" ${k===fl?'selected':''}>${v.name}${k==='rlp'?' (추천)':''}</option>`).join('')}</select> <span>${FLOWS[fl].why.replace(/^추천\. /,'')}</span>`:MODES[mode].short;
-  $('#predBox').classList.toggle('hide',!(mode==='fluency'||(mode==='rlp'&&fl==='p')));
+  $('#modeWhy').innerHTML=MODES[mode].short;
+  $('#predBox').classList.toggle('hide',mode!=='test');
+  $('#rangeTxt').parentElement.classList.toggle('dim',mode==='test');
 }
 $('#modes').onclick=e=>{const t=e.target.closest('button');if(!t||isBusy())return;const m=t.dataset.m;if(m){mode=m;renderModes();$('#result').classList.add('hide')}};
 $('#modeWhy').onchange=e=>{if(e.target.id==='flowSel'){S.opts.flow=e.target.value;save();renderModes()}};
@@ -800,7 +798,34 @@ async function go(){
   const runs=[];const base=sg.meta.bpm;const opt={clicks:S.opts.click,fade:S.opts.fade};let extra={};
   if(S.opts.view==='sheet')await renderSheet(sg);
   try{
-    if(mode==='rlp'){
+    if(mode==='lp'||mode==='p'){
+      let k=0;
+      do{k++;
+        if(mode==='lp'&&!STOP){
+          for(;;){
+            stepPanel(`<h3>듣기</h3><div class="mute">마디 ${sg.pm[from].label}${to>from?'–'+sg.pm[to].label:''} · 악보를 보면서 들어요</div>`);
+            setStatus(S.opts.loop?`${k}번째 · 듣는 중`:'듣는 중');
+            await runSegment({sg,from,to,bpm:sg.meta.bpm,guide:true,score:false,clicks:opt.clicks,label:'듣기'});
+            if(STOP||S.opts.loop)break;
+            const a=await askStep({title:'이제 따라 불어요',text:'',buttons:[['next','불기 ▶'],['again','↺ 다시 듣기']]});
+            if(a.k==='again'&&!STOP)continue;break;
+          }
+        }
+        if(STOP)break;
+        stepPanel(mode==='lp'?`<h3>불기</h3><div class="mute">박자 세는 동안 첫 음 운지를 준비하세요</div>`:'');
+        setStatus(S.opts.loop?`${k}번째 · 부는 중`:'부는 중');
+        const r=await runSegment({sg,from,to,bpm:sg.meta.bpm,guide:S.opts.guide,score:true,clicks:opt.clicks,fade:opt.fade,label:S.opts.loop?`${k}번째`:MODES[mode].name});
+        if(r){runs.push(r);if(S.opts.auto&&!r.partial)autoTempo(sg,r)}
+      }while(S.opts.loop&&!STOP);
+      stepPanel('');
+    }else if(mode==='test'){
+      setRange(0,sg.pm.length-1);
+      stepPanel(`<h3>테스트</h3><div class="mute">처음부터 끝까지 한 번. 틀려도 멈추지 말고 계속 가요.</div>`);
+      setStatus('테스트 중');
+      const r=await runSegment({sg,from:0,to:sg.pm.length-1,bpm:sg.meta.bpm,guide:false,score:true,clicks:opt.clicks,label:'테스트'});
+      if(r){r.pred=pred;runs.push(r);if(!r.partial){const mt=sg.meta;mt.tests=mt.tests||[];r.prevTest=mt.tests[mt.tests.length-1]||null;r.bestTest=mt.tests.length?Math.max(...mt.tests.map(x=>x.acc)):null;mt.tests.push({t:Date.now(),acc:Math.round(r.acc*100),bpm:r.bpm});if(mt.tests.length>50)mt.tests.shift();save()}}
+      stepPanel('');
+    }else if(mode==='rlp'){
       const bars=srcBarsIn(sg,from,to);const fk=S.opts.flow||'rlp',flow=FLOWS[fk].steps;const total=flow.length;let heard=false,readDone=false,rep=0;
       do{rep++;
       for(let si=0;si<total&&!STOP;si++){
@@ -905,6 +930,8 @@ function showResult(runs){
     if(!RECORDED.has(runs)){mt.flu.push({t:Date.now(),cpm:best,range:last.from+'-'+last.to});if(mt.flu.length>30)mt.flu.shift();save();RECORDED.add(runs)}
     h+=`<div style="margin-top:6px"><b>1분에 맞힌 음 ${best}</b> <span class="mute">${prev==null?'첫 기록':`지난번 ${prev}${best>prev?` → <b style="color:#16a34a">+${best-prev}</b>`:''} · 최고 ${Math.max(top,best)}`} · 판별 ${runs.map(r=>Math.round(r.cpm)).join(' → ')}</span></div>`;
   }
+  if(last.prevTest!==undefined){const pv=last.prevTest,now=Math.round(last.acc*100);const d=(x)=>{const t=new Date(x);return (t.getMonth()+1)+'/'+t.getDate()};
+    h+=`<div style="margin-top:6px"><b>테스트 기록</b> <span class="mute">${pv?`지난번 ${d(pv.t)} ${pv.acc}% (템포 ${pv.bpm}) → 오늘 ${now}% (템포 ${last.bpm})${last.bestTest!=null&&now>last.bestTest?' · <b style="color:#16a34a">최고 기록</b>':''}`:'첫 기록'} · 총 ${last.sg.meta.tests.length}번</span></div>`}
   h+=`<div class="ra"><button class="pri" data-act="again">↺ 다시</button>${weakIdx.length?`<button data-act="weak">틀린 마디만 (${last.sg.pm[weakIdx[0]].label})</button>`:''}${last.wait||mode==='fluency'?'':`<button data-act="slow">느리게 −4</button><button data-act="fast">빠르게 +4</button>`}<button class="ghost" data-act="close">닫기</button></div>`;
   h+=`<p class="mute" style="margin:8px 0 0">${nextTip(runs)}</p>`;
   let d='';
@@ -931,10 +958,10 @@ function showResult(runs){
   }
   h+=`<details style="margin-top:6px"><summary>자세히</summary>${d}</details>`;
   box.innerHTML=h;
-  box.querySelectorAll('.heat span').forEach(s=>s.onclick=()=>{const b=+s.dataset.b,n=sg.pm.length,k=chunkSize(sg);const a=Math.max(0,Math.min(b,n-k));setRange(a,Math.min(n-1,a+k-1));mode='drill';renderModes();sheetScrollTo(a);box.classList.add('hide')});
+  box.querySelectorAll('.heat span').forEach(s=>s.onclick=()=>{const b=+s.dataset.b,n=sg.pm.length,k=chunkSize(sg);const a=Math.max(0,Math.min(b,n-k));setRange(a,Math.min(n-1,a+k-1));mode='lp';renderModes();sheetScrollTo(a);box.classList.add('hide')});
   box.onclick=e=>{const a=e.target.dataset.act;if(!a||isBusy())return;
     if(a==='close'){box.classList.add('hide');return}
-    if(a==='weak'){const pi=weakIdx[0],n=last.sg.pm.length;const k=Math.min(chunkSize(last.sg),last.to-last.from+1);const st=Math.max(last.from,Math.min(pi,last.to-k+1));setRange(st,Math.min(n-1,st+k-1));sheetScrollTo(st)}
+    if(a==='weak'){if(mode==='test'){mode='lp';renderModes()}const pi=weakIdx[0],n=last.sg.pm.length;const k=Math.min(chunkSize(last.sg),last.to-last.from+1);const st=Math.max(last.from,Math.min(pi,last.to-k+1));setRange(st,Math.min(n-1,st+k-1));sheetScrollTo(st)}
     if(a==='slow'||a==='fast'){const m=SG.meta;m.bpm=Math.max(30,Math.min(200,m.bpm+(a==='slow'?-4:4)));$('#bpmTxt').textContent=m.bpm;save()}
     go()};
   box.scrollIntoView({block:'nearest',behavior:'smooth'});
@@ -1008,14 +1035,12 @@ function renderHome(){
 }
 function renderPlan(ids){
   const items=[];
-  const fresh=ids.find(id=>!S.songs[id].runs),weakId=ids.filter(id=>S.songs[id].runs).sort((a,b)=>(S.songs[a].best?1:0)-(S.songs[b].best?1:0))[0];
-  const fam=S.order.map(id=>S.songs[id]).filter(s=>s.best).sort((a,b)=>b.last-a.last)[0];
-  if(weakId)items.push(['구간 훈련 3분',`${short(S.songs[weakId].title)}: 가장 약한 8박`,'drill',weakId]);
-  if(fresh)items.push(['단계 연습',`${short(S.songs[fresh].title)}: ${FLOWS[S.opts.flow||'rlp'].name}`,'rlp',fresh]);
-  if(lessonsList().length>1||ids.length>1)items.push(['섞기 2분','이 레슨과 지난 3개 레슨 조각을 섞어서','mix',ids[0]]);
-  if(fam)items.push(['유창성 3판',`${short(fam.title)}: 템포 ${fam.best}부터 빠르게`,'fluency',fam.id]);
-  if(!items.length&&ids[0])items.push(['단계 연습',FLOWS[S.opts.flow||'rlp'].name,'rlp',ids[0]]);
-  $('#plan').innerHTML=items.slice(0,4).map(([a,b,m,id])=>`<li><b>${a}</b> <span class="mute">${b}</span><button class="chip" data-go="${m}" data-id="${id||''}">바로</button></li>`).join('');
+  const recent=ids.filter(id=>S.songs[id].last).sort((a,b)=>S.songs[b].last-S.songs[a].last)[0];
+  if(recent)items.push(['이어서',short(S.songs[recent].title),'lp',recent]);
+  const fresh=ids.find(id=>!S.songs[id].last);if(fresh)items.push(['새 곡',short(S.songs[fresh].title),'lp',fresh]);
+  const tst=ids.filter(id=>S.songs[id].last).sort((a,b)=>((S.songs[a].tests||[]).slice(-1)[0]?.t||0)-((S.songs[b].tests||[]).slice(-1)[0]?.t||0))[0];
+  if(tst)items.push(['테스트',`${short(S.songs[tst].title)}${(S.songs[tst].tests||[]).length?` · 지난 ${S.songs[tst].tests.slice(-1)[0].acc}%`:' · 아직 기록 없음'}`,'test',tst]);
+  $('#plan').innerHTML=items.map(([a,b,m,id])=>`<li><b>${a}</b> <span class="mute">${b}</span><button class="chip" data-go="${m}" data-id="${id||''}">바로</button></li>`).join('')||'<li class="mute">아래에서 곡을 열어요</li>';
 }
 function renderOpts(){
   const o=S.opts;
