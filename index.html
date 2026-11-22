@@ -30,7 +30,8 @@ main{max-width:1000px;margin:0 auto;padding:10px}
 .plan li{margin:6px 0}
 .plan button{margin-left:6px}
 #stage{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
-#sheet{height:clamp(220px,calc(100dvh - 430px),560px);overflow-y:auto;overflow-x:hidden;padding:4px 0;scroll-behavior:smooth;position:relative}
+#sheet.dragging{cursor:col-resize;user-select:none;-webkit-user-select:none}
+#sheet{touch-action:pan-y;-webkit-user-select:none;user-select:none;height:clamp(220px,calc(100dvh - 430px),560px);overflow-y:auto;overflow-x:hidden;padding:4px 0;scroll-behavior:smooth;position:relative}
 .ovl{position:absolute;pointer-events:none;border-radius:6px}
 #curBox{background:rgba(250,204,21,.38);outline:2px solid #f59e0b;transition:left .06s,top .06s;z-index:0}
 .sel{background:rgba(31,111,92,.10);border:1.5px dashed rgba(31,111,92,.55)}
@@ -538,7 +539,7 @@ function setRange(a,b){$('#fromBar').value=a;$('#toBar').value=b;drawSel()}
 function drawSel(){
   const sg=SG;const lay=$('#selLayer');if(!sg)return;
   const a=+$('#fromBar').value,b=+$('#toBar').value,full=a===0&&b===sg.pm.length-1;
-  $('#rangeTxt').innerHTML=full?'<b>전체</b> <span class="mute">· 마디 탭</span>':(a===b?`<b>마디 ${sg.pm[a].label}</b> <span class="mute">· 또 탭: 거기까지</span>`:`<b>마디 ${sg.pm[a].label}–${sg.pm[b].label}</b>`);
+  $('#rangeTxt').innerHTML=full?'<b>전체</b> <span class="mute">· 마디 탭·드래그</span>':(a===b?`<b>마디 ${sg.pm[a].label}</b> <span class="mute">· 또 탭: 거기까지</span>`:`<b>마디 ${sg.pm[a].label}–${sg.pm[b].label}</b>`);
   $('#rangeAll').classList.toggle('hide',full);
   if(!lay)return;lay.innerHTML='';if(full)return;
   const srcs=new Set();for(let i=a;i<=b;i++)srcs.add(sg.pm[i].src);
@@ -547,7 +548,32 @@ function drawSel(){
     if(x1>x2)continue;const cy=(y1+y2)/2,h=Math.max(y2-y1,56);
     const d=document.createElement('div');d.className='ovl sel';d.style.left=(x1-8)+'px';d.style.top=(cy-h/2-10)+'px';d.style.width=(x2-x1+16)+'px';d.style.height=(h+20)+'px';lay.appendChild(d)}
 }
+/* 드래그로 구간 고르기: 마우스는 바로, 터치는 옆으로 밀거나 꾹 누른 뒤 */
+const DRG={on:false,id:null,x:0,y:0,a:null,t:0,timer:null,just:0,raf:0};
+function pmOf(mi){return SG.pm.findIndex(m=>m.src===mi)}
+function dragStart(){DRG.on=true;clearTimeout(DRG.timer);SEL='done';$('#sheet').classList.add('dragging');if(navigator.vibrate)try{navigator.vibrate(10)}catch(e){}}
+$('#sheet').addEventListener('pointerdown',e=>{
+  if(isBusy()||!SG||e.button>0)return;const mi=measureAt(e.clientX,e.clientY);if(mi==null)return;
+  Object.assign(DRG,{on:false,id:e.pointerId,x:e.clientX,y:e.clientY,a:pmOf(mi),t:Date.now()});
+  clearTimeout(DRG.timer);if(e.pointerType!=='mouse')DRG.timer=setTimeout(()=>{if(DRG.id!=null&&!DRG.on){dragStart();setRange(DRG.a,DRG.a)}},350);
+});
+$('#sheet').addEventListener('pointermove',e=>{
+  if(DRG.id!==e.pointerId)return;const dx=e.clientX-DRG.x,dy=e.clientY-DRG.y;
+  if(!DRG.on){
+    if(e.pointerType==='mouse'){if(Math.hypot(dx,dy)>8)dragStart();else return}
+    else if(Math.abs(dx)>12&&Math.abs(dx)>Math.abs(dy)*1.2)dragStart();
+    else{if(Math.hypot(dx,dy)>10)clearTimeout(DRG.timer);return}
+  }
+  e.preventDefault();
+  if(DRG.raf)return;const cx=e.clientX,cy=e.clientY;
+  DRG.raf=requestAnimationFrame(()=>{DRG.raf=0;const mi=measureAt(cx,cy);if(mi==null)return;const b=pmOf(mi);if(b<0||DRG.a<0)return;setRange(Math.min(DRG.a,b),Math.max(DRG.a,b));
+    const box=$('#sheet'),br=box.getBoundingClientRect();if(cy>br.bottom-40)box.scrollTop+=12;else if(cy<br.top+40)box.scrollTop-=12});
+},{passive:false});
+function dragEnd(e){if(DRG.id!==e.pointerId)return;clearTimeout(DRG.timer);if(DRG.on){DRG.just=Date.now();$('#sheet').classList.remove('dragging')}DRG.on=false;DRG.id=null}
+$('#sheet').addEventListener('pointerup',dragEnd);$('#sheet').addEventListener('pointercancel',dragEnd);
+$('#sheet').addEventListener('touchmove',e=>{if(DRG.on)e.preventDefault()},{passive:false});
 $('#sheet').addEventListener('click',e=>{
+  if(Date.now()-DRG.just<400)return;
   if(isBusy()||!SG)return;const mi=measureAt(e.clientX,e.clientY);if(mi==null)return;
   const pi=SG.pm.findIndex(m=>m.src===mi);if(pi<0)return;
   const a=+$('#fromBar').value,b=+$('#toBar').value,full=a===0&&b===SG.pm.length-1;
