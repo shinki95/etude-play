@@ -30,7 +30,7 @@ main{max-width:1000px;margin:0 auto;padding:10px}
 .plan li{margin:6px 0}
 .plan button{margin-left:6px}
 #stage{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative}
-#sheet{height:min(52vh,480px);overflow-y:auto;overflow-x:hidden;padding:4px 0;scroll-behavior:smooth;position:relative}
+#sheet{height:clamp(220px,calc(100dvh - 430px),560px);overflow-y:auto;overflow-x:hidden;padding:4px 0;scroll-behavior:smooth;position:relative}
 .ovl{position:absolute;pointer-events:none;border-radius:6px}
 #curBox{background:rgba(250,204,21,.38);outline:2px solid #f59e0b;transition:left .06s,top .06s;z-index:0}
 .sel{background:rgba(31,111,92,.10);border:1.5px dashed rgba(31,111,92,.55)}
@@ -48,6 +48,28 @@ canvas{display:block;width:100%;height:270px;touch-action:none}
 .ctl label{font-size:13px;color:var(--mute)}
 select{font:inherit;padding:5px;border-radius:8px;border:1px solid var(--line);background:#fff}
 .modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.bar1{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.seg{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.seg button{border-radius:999px;padding:7px 13px;font-size:14px;background:transparent;border-color:transparent;color:var(--mute)}
+.seg button.on{background:var(--acc);color:#fff;font-weight:600}
+.seg .more{border:1px dashed var(--line)}
+.ghost{background:transparent;border-color:transparent;color:var(--mute);font-size:14px}
+.why select{font:inherit;font-size:14px;padding:4px 6px}
+#dock{position:sticky;bottom:0;z-index:6;background:var(--bg);border-top:1px solid var(--line);margin:8px -10px 0;padding:8px 10px max(10px,env(safe-area-inset-bottom))}
+.drow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:2px 0}
+.drow+.drow{margin-top:6px}
+.tempo{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-right:auto}
+.tempo button{border:0;background:transparent;font-size:20px;padding:6px 14px}
+.tempo b{min-width:34px;text-align:center}
+.tempo::after{content:'템포';font-size:11px;color:var(--mute);padding-right:10px}
+button.big{min-width:118px;padding:12px 18px;font-size:16px;border-radius:14px}
+button.big.stop{background:#1d1d1b;border-color:#1d1d1b}
+button.big2{padding:12px 14px;font-size:15px;border-radius:14px}
+.whyrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:2px 0 8px}.whyrow .why{margin:0}
+#predBox{margin:0;gap:3px}#predBox .chip{padding:2px 7px;font-size:12px}
+.ra{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ra button{border-radius:12px}
+.score{font-size:28px;font-weight:700}
 .why{font-size:13px;color:var(--mute);margin:2px 0 8px}
 #step{border:2px solid var(--acc);background:var(--acc2)}
 #step h3{margin:0 0 4px;font-size:15px}
@@ -100,34 +122,40 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
 
 <!-- PLAY -->
 <section id="play" class="hide">
-  <div class="modes" id="modes"></div>
-  <p class="why" id="modeWhy"></p>
+  <div class="bar1"><div class="seg" id="modes"></div><button class="ghost" id="setBtn">설정</button></div>
+  <div class="whyrow"><div class="why" id="modeWhy"></div><div class="pred hide" id="predBox"></div></div>
+  <div class="card hide" id="setPanel">
+    <div class="ctl" id="opts">
+      <button class="chip" id="oView">보기: 악보</button>
+      <button class="chip" id="oFing">운지: 자동</button>
+      <button class="chip" id="oFade">외워서 끔</button>
+      <button class="chip" id="oClick">메트로놈 켬</button>
+      <button class="chip" id="oGuide">채점 중 가이드 소리 끔</button>
+      <button class="chip" id="oPk">음높이 줄 켬</button>
+      <button class="chip" id="oZoom">글자 크기</button>
+      <button class="chip" id="oCal">박자 보정</button>
+    </div>
+  </div>
   <div class="card hide" id="step"></div>
+  <div class="card hide" id="result"></div>
   <div id="stage">
     <div id="sheet"></div>
     <canvas id="cv" class="hide"></canvas>
     <div id="tune" class="hide"></div>
     <canvas id="pk" class="hide"></canvas>
     <div id="big"></div>
-    <div id="hud"><span>정확도 <b id="hAcc">-</b></span><span>콤보 <b id="hCombo">0</b></span><span id="hJudge" class="mute"></span><span id="hLive" class="mute" style="margin-left:auto"></span></div>
+    <div id="hud" class="hide"><span>정확도 <b id="hAcc">-</b></span><span>콤보 <b id="hCombo">0</b></span><span id="hJudge" class="mute"></span><span id="hLive" class="mute"></span></div>
   </div>
-  <div class="ctl">
-    <label>템포</label><button id="tm">−</button><b id="bpmTxt">60</b><button id="tp">+</button>
+  <div id="dock">
+    <div class="drow"><span class="rng" id="rangeTxt"></span><button class="chip hide" id="rangeAll">전체로</button><button class="chip" id="oLoop">반복</button><span class="mute" id="status" style="margin-left:auto"></span></div>
+    <div class="drow">
+      <div class="tempo"><button id="tm" aria-label="느리게">−</button><b id="bpmTxt">60</b><button id="tp" aria-label="빠르게">+</button></div>
+      <button id="retryBtn" class="big2">↺ 다시</button>
+      <button class="pri big" id="goBtn">▶ 시작</button>
+      <button id="stopBtn" class="hide"></button>
+    </div>
     <select id="fromBar" class="hide"></select><select id="toBar" class="hide"></select>
-    <span class="rng" id="rangeTxt"></span><button class="chip" id="rangeAll">전체</button><button class="chip" id="oLoop">구간 반복 끔</button>
   </div>
-  <div class="ctl" id="opts">
-    <button class="chip" id="oView">보기: 악보</button>
-    <button class="chip" id="oFing">운지: 자동</button>
-    <button class="chip" id="oFade">외워서 끔</button>
-    <button class="chip" id="oClick">메트로놈 켬</button>
-    <button class="chip" id="oGuide">채점 중 가이드 소리 끔</button>
-    <button class="chip" id="oZoom">글자 크기</button>
-    <button class="chip" id="oPk">음높이 줄 켬</button>
-  </div>
-  <div class="pred hide" id="predBox"></div>
-  <div class="ctl"><button class="pri" id="goBtn" style="min-width:120px">시작</button><button id="stopBtn" disabled>멈춤</button><span class="mute" id="status"></span></div>
-  <div class="card hide" id="result"></div>
 </section>
 </main>
 
@@ -354,7 +382,7 @@ function runSegment(o){
     if(o.clicks){for(let i=o.from;i<=o.to;i++){const m=ms[i];for(let b=0;b<m.beats;b++)click(songStart+(m.t-startQ+b*4/m.bt)*spq,b===0,out)}}
     const notes=sg.notes.filter(n=>n.m>=o.from&&n.m<=o.to).map(n=>Object.assign({},n,{j:null,s:(n.t-startQ)*spq,ds:n.d*spq}));
     if(o.guide||(SELFTEST&&o.score)){
-      const dests=[];if(o.guide)dests.push(out);if(SELFTEST&&o.score&&micAn)dests.push(micAn);
+      const dests=[];if(o.guide)dests.push(out);if(SELFTEST&&o.score&&micAn){o._st=ctx.createGain();o._st.connect(micAn);dests.push(o._st)}
       const shift=SELFTEST&&o.score?(+qs.get('shift')||0):0,drop=SELFTEST&&o.score?(+qs.get('drop')||0):0,late=SELFTEST&&o.score?(+qs.get('late')||0)/1000:0;
       for(const n of notes){if(drop&&Math.random()<drop)continue;tone(n.midi+shift,sg.trans,songStart+n.s+late,n.ds*0.88,o.guide?0.22:0.3,dests)}
     }
@@ -364,7 +392,7 @@ function runSegment(o){
 }
 function finishRun(){
   const r=RUN;if(!r)return;RUN=null;
-  try{r.out.gain.setTargetAtTime(0,ctx.currentTime,0.01);setTimeout(()=>r.out.disconnect(),300)}catch(e){}
+  try{r.out.gain.setTargetAtTime(0,ctx.currentTime,0.01);setTimeout(()=>r.out.disconnect(),300);if(r._st){r._st.gain.value=0;r._st.disconnect()}}catch(e){}
   showBig('');
   if(r.curIdx>=0)paintNote(r.notes[r.curIdx]);
   let res=null;
@@ -510,7 +538,8 @@ function setRange(a,b){$('#fromBar').value=a;$('#toBar').value=b;drawSel()}
 function drawSel(){
   const sg=SG;const lay=$('#selLayer');if(!sg)return;
   const a=+$('#fromBar').value,b=+$('#toBar').value,full=a===0&&b===sg.pm.length-1;
-  $('#rangeTxt').innerHTML=full?'<span class="mute">전체 · 악보에서 마디를 탭하면 그 마디만</span>':(a===b?`<b>마디 ${sg.pm[a].label}</b> <span class="mute">· 다른 마디를 탭하면 거기까지</span>`:`<b>마디 ${sg.pm[a].label}–${sg.pm[b].label}</b>`);
+  $('#rangeTxt').innerHTML=full?'<b>전체</b> <span class="mute">· 마디를 탭하면 그 부분만</span>':(a===b?`<b>마디 ${sg.pm[a].label}</b> <span class="mute">· 한 번 더 탭하면 거기까지</span>`:`<b>마디 ${sg.pm[a].label}–${sg.pm[b].label}</b>`);
+  $('#rangeAll').classList.toggle('hide',full);
   if(!lay)return;lay.innerHTML='';if(full)return;
   const srcs=new Set();for(let i=a;i<=b;i++)srcs.add(sg.pm[i].src);
   for(const mi of srcs){const arr=srcEl[mi]||[];let x1=1e9,y1=1e9,x2=-1e9,y2=-1e9;
@@ -519,13 +548,13 @@ function drawSel(){
     const d=document.createElement('div');d.className='ovl sel';d.style.left=(x1-8)+'px';d.style.top=(cy-h/2-10)+'px';d.style.width=(x2-x1+16)+'px';d.style.height=(h+20)+'px';lay.appendChild(d)}
 }
 $('#sheet').addEventListener('click',e=>{
-  if(RUN||WAIT||stepBusy||!SG)return;const mi=measureAt(e.clientX,e.clientY);if(mi==null)return;
+  if(isBusy()||!SG)return;const mi=measureAt(e.clientX,e.clientY);if(mi==null)return;
   const pi=SG.pm.findIndex(m=>m.src===mi);if(pi<0)return;
   const a=+$('#fromBar').value,b=+$('#toBar').value,full=a===0&&b===SG.pm.length-1;
   if(full||SEL==='done'||a!==b){setRange(pi,pi);SEL='one'}
   else{setRange(Math.min(a,pi),Math.max(a,pi));SEL='done'}
 });
-$('#rangeAll').onclick=()=>{if(RUN||WAIT||stepBusy)return;SEL=null;setRange(0,SG.pm.length-1)};
+$('#rangeAll').onclick=()=>{if(isBusy())return;SEL=null;setRange(0,SG.pm.length-1)};
 function showMicUI(){$('#tune').classList.remove('hide');$('#pk').classList.toggle('hide',!S.opts.pk);if(S.opts.pk)setTimeout(()=>{resizePk();pk._w=pk.clientWidth},0)}
 function elsOf(n){const out=[];for(const [mi,k] of n.src){const gn=srcEl[mi]?.[k];const el=gn&&gn.getSVGGElement&&gn.getSVGGElement();if(el)out.push(el)}return out}
 function colorEl(el,c,op){el.querySelectorAll('path').forEach(p=>{if(p.getAttribute('fill')!=='none')p.setAttribute('fill',c);p.setAttribute('stroke',c)});el.style.opacity=op==null?'':op}
@@ -702,12 +731,12 @@ function finishWait(){
 /* ================= 모드 ================= */
 const MODES={
   rlp:{name:'단계 연습',why:''},
-  tune:{name:'음 맞추기',why:'박자 없이 혼자 천천히. 노란 칸의 음을 불면 색으로 바로 알려 줘요: 빨강 = 더 높게, 파랑 = 더 낮게, 초록 = 맞아요. 맞는 음을 잠깐 유지하면 다음 음으로 넘어가요.'},
-  drill:{name:'구간 훈련',why:'가장 약한 조각(8박)을 3분 동안. 매 판 시작 전 박자 동안 그 조각을 눈으로 먼저 읽어요. 90%↑ 템포 +4, 70%↓ −4로 늘 될 듯 말 듯하게. 3·4번째 판은 외워서·메트로놈 없이.'},
-  game:{name:'끝까지',why:'고른 구간을 멈추지 않고 끝까지. 예상 정확도를 먼저 찍으면 끝나고 실제와 비교해 줘요.'},
-  fluency:{name:'유창성',why:'이미 되는 곡을 빠르게: 깨끗하게 된 템포 → +8% → +15% 세 판, 틀려도 멈추지 않기. 기록은 1분에 맞힌 음 수.'},
-  mix:{name:'섞기',why:'이 레슨과 지난 레슨들의 8박 조각을 뒤섞어 처음 보는 것처럼 읽고 바로 불기. 당장은 어렵지만 오래 남아요.'},
-  listen:{name:'듣기만',why:'채점 없이 소리만. 읽고·듣고·불기의 ②만 따로 할 때.'}
+  tune:{name:'음 맞추기',short:'맞는 음을 내면 다음 음으로 · <b style="color:#dc2626">빨강</b> 더 높게 · <b style="color:#2563eb">파랑</b> 더 낮게',why:'박자 없이 혼자 천천히. 노란 칸의 음을 불면 색으로 바로 알려 줘요: 빨강 = 더 높게, 파랑 = 더 낮게, 초록 = 맞아요. 맞는 음을 잠깐 유지하면 다음 음으로 넘어가요.'},
+  drill:{name:'구간 훈련',short:'약한 8박을 3분 동안, 템포는 알아서 조절',why:'가장 약한 조각(8박)을 3분 동안. 매 판 시작 전 박자 동안 그 조각을 눈으로 먼저 읽어요. 90%↑ 템포 +4, 70%↓ −4로 늘 될 듯 말 듯하게. 3·4번째 판은 외워서·메트로놈 없이.'},
+  game:{name:'끝까지',short:'멈추지 않고 끝까지',why:'고른 구간을 멈추지 않고 끝까지. 예상 정확도를 먼저 찍으면 끝나고 실제와 비교해 줘요.'},
+  fluency:{name:'유창성',short:'되는 곡을 점점 빠르게 3판',why:'이미 되는 곡을 빠르게: 깨끗하게 된 템포 → +8% → +15% 세 판, 틀려도 멈추지 않기. 기록은 1분에 맞힌 음 수.'},
+  mix:{name:'섞기',short:'여러 곡 조각을 섞어서 바로 불기',why:'이 레슨과 지난 레슨들의 8박 조각을 뒤섞어 처음 보는 것처럼 읽고 바로 불기. 당장은 어렵지만 오래 남아요.'},
+  listen:{name:'듣기만',short:'소리만 들어요(채점 없음)',why:'채점 없이 소리만. 읽고·듣고·불기의 ②만 따로 할 때.'}
 };
 let mode='rlp';
 const FLOWS={
@@ -717,16 +746,23 @@ const FLOWS={
   lp:{name:'듣기→불기',steps:['listen','play'],why:'듣고 바로 따라 불기. 귀로 익히는 연습.'},
   p:{name:'바로 불기',steps:['play'],why:'준비 없이 바로 불기. 이미 익숙한 곡 점검용.'}
 };
+const PRIMARY=['rlp','tune','game'];let moreOpen=false;
 function renderModes(){
-  $('#modes').innerHTML=Object.entries(MODES).map(([k,v])=>`<button class="chip ${k===mode?'on':''}" data-m="${k}">${v.name}</button>`).join('');
-  const fl=FLOWS[S.opts.flow||'rlp'];
-  $('#modeWhy').innerHTML=mode==='rlp'?`<span class="row" style="gap:6px;margin-bottom:4px">순서: ${Object.entries(FLOWS).map(([k,v])=>`<button class="chip ${k===(S.opts.flow||'rlp')?'on':''}" data-flow="${k}">${v.name}</button>`).join('')}</span><br>${fl.why}`:MODES[mode].why;
+  const sec=Object.keys(MODES).filter(k=>!PRIMARY.includes(k));
+  let h=PRIMARY.map(k=>`<button class="${k===mode?'on':''}" data-m="${k}">${MODES[k].name}</button>`).join('');
+  if(moreOpen)h+=sec.map(k=>`<button class="${k===mode?'on':''}" data-m="${k}">${MODES[k].name}</button>`).join('')+`<button class="more" data-more="0">접기</button>`;
+  else h+=sec.includes(mode)?`<button class="on" data-more="1">${MODES[mode].name} ▾</button>`:`<button class="more" data-more="1">더보기 ▾</button>`;
+  $('#modes').innerHTML=h;
+  const fl=S.opts.flow||'rlp';
+  $('#modeWhy').innerHTML=mode==='rlp'?`순서 <select id="flowSel">${Object.entries(FLOWS).map(([k,v])=>`<option value="${k}" ${k===fl?'selected':''}>${v.name}${k==='rlp'?' (추천)':''}</option>`).join('')}</select>`:(MODES[mode].short||'');
+  $('#modeWhy').title=mode==='rlp'?FLOWS[fl].why:MODES[mode].why;
   $('#predBox').classList.toggle('hide',!(mode==='game'||mode==='fluency'));
 }
-$('#modes').onclick=e=>{const m=e.target.dataset.m;if(m&&!RUN&&!stepBusy){mode=m;renderModes()}};
-$('#modeWhy').onclick=e=>{const f=e.target.dataset.flow;if(f&&!RUN&&!stepBusy){S.opts.flow=f;save();renderModes()}};
+$('#modes').onclick=e=>{const t=e.target.closest('button');if(!t||isBusy())return;if(t.dataset.more!=null){moreOpen=t.dataset.more==='1';renderModes();return}
+  const m=t.dataset.m;if(m){mode=m;if(PRIMARY.includes(m))moreOpen=false;renderModes();$('#result').classList.add('hide')}};
+$('#modeWhy').onchange=e=>{if(e.target.id==='flowSel'){S.opts.flow=e.target.value;save();renderModes()}};
 let pred=null;
-function renderPred(){$('#predBox').innerHTML='<span class="mute">이번 판 예상 정확도:</span>'+[50,60,70,80,90,100].map(p=>`<button class="chip ${pred===p?'on':''}" data-p="${p}">${p}</button>`).join('')}
+function renderPred(){$('#predBox').innerHTML='<span class="mute">예상 점수</span>'+[50,60,70,80,90,100].map(p=>`<button class="chip ${pred===p?'on':''}" data-p="${p}">${p}</button>`).join('')}
 $('#predBox').onclick=e=>{const p=+e.target.dataset.p;if(p){pred=pred===p?null:p;renderPred()}};
 
 function chunkSize(sg){return Math.max(2,Math.ceil(8/sg.pm[0].beats*(sg.pm[0].bt/4)))}
@@ -766,7 +802,7 @@ async function go(){
   if(mode!=='listen'&&!(await ensureMic()))return;
   if(micAn)showMicUI();
   const sg=SG;const from=+$('#fromBar').value,to=+$('#toBar').value;
-  STOP=false;stepBusy=true;$('#goBtn').disabled=true;$('#stopBtn').disabled=false;$('#result').classList.add('hide');
+  STOP=false;stepBusy=true;setBusy(true);$('#result').classList.add('hide');$('#hud').classList.remove('hide');
   $('#hAcc').textContent='-';$('#hCombo').textContent='0';$('#hJudge').textContent='';
   const runs=[];const base=sg.meta.bpm;const opt={clicks:S.opts.click,fade:S.opts.fade};let extra={};
   if(S.opts.view==='sheet')await renderSheet(sg);
@@ -850,51 +886,64 @@ async function go(){
     }
   }finally{
     stepBusy=false;stepPanel('');
-    $('#goBtn').disabled=false;$('#stopBtn').disabled=true;if(!/3분 끝/.test($('#status').textContent))setStatus('');
+    setBusy(false);if(!/3분 끝/.test($('#status').textContent))setStatus('');
+    if(RETRY){RETRY=false;pred=null;renderPred();setTimeout(go,250);return}
     if(runs.length)showResult(runs);pred=null;renderPred();
   }
 }
 function short(t){t=(t||'').replace(/\s*\([^)]*\)\s*$/,'');return t.length>24?t.slice(0,23)+'…':t}
 function pc(x){return Math.round(x*100)+'%'}
 function heatColor(v){return v>=0.9?'#16a34a':v>=0.75?'#65a30d':v>=0.6?'#ca8a04':'#dc2626'}
+let LASTRUNS=null;
 function showResult(runs){
+  LASTRUNS=runs;
   const box=$('#result');box.classList.remove('hide');
-  const sg=SG;let h=`<h2>결과 · ${MODES[mode].name}</h2>`;
+  const sg=SG,last=runs[runs.length-1];
+  const avg=runs.reduce((a,r)=>a+r.acc,0)/runs.length;
+  let h=`<div class="row" style="align-items:baseline;gap:10px"><span class="score" style="color:${heatColor(last.acc)}">${pc(last.acc)}</span><span class="mute">${last.wait?'한 번에 맞힌 비율':'정확도'}${runs.length>1?` · ${runs.length}판 평균 ${pc(avg)}`:''}${last.wait?'':` · 템포 ${last.bpm}`} · 최대 콤보 ${last.maxCombo}</span></div>`;
+  const weakIdx=Object.keys(last.barAcc).map(Number).filter(k=>last.barAcc[k]<0.9).sort((a,b)=>last.barAcc[a]-last.barAcc[b]);
+  h+=`<div class="ra"><button class="pri" data-act="again">↺ 다시</button>${weakIdx.length?`<button data-act="weak">틀린 마디만 (${last.sg.pm[weakIdx[0]].label})</button>`:''}${last.wait?'':`<button data-act="slow">느리게 −4</button><button data-act="fast">빠르게 +4</button>`}<button class="ghost" data-act="close">닫기</button></div>`;
+  h+=`<p class="mute" style="margin:8px 0 0">${nextTip(runs)}</p>`;
+  let d='';
   for(const r of runs){
     const c=r.cnt;
-    h+=`<div class="res-run"><b>${r.label}</b>${r.wait?'':` · 템포 ${r.bpm}`} · ${r.wait?'한 번에 맞힌 비율':'정확도'} <b>${pc(r.acc)}</b> · 최대 콤보 ${r.maxCombo}`+
-      (mode==='fluency'?` · 1분에 맞힌 음 <b>${Math.round(r.cpm)}</b>${r.stopped?' · 중간에 끊김':''}`:'')+(r.adj?` <span class="tag">${r.adj}</span>`:'')+(r.wait?`<div class="mute">한 번에 맞힌 음 ${r.cnt.perfect} · 다시 해서 맞힌 음 ${r.cnt.good}${r.retry.length?` · 다시 걸린 마디: ${r.retry.join(', ')}`:''}</div>`:'')+
+    d+=`<div class="res-run"><b>${r.label}</b>${r.wait?'':` · 템포 ${r.bpm}`} · <b>${pc(r.acc)}</b>`+
+      (mode==='fluency'?` · 1분에 맞힌 음 <b>${Math.round(r.cpm)}</b>${r.stopped?' · 중간에 끊김':''}`:'')+(r.adj?` <span class="tag">${r.adj}</span>`:'')+(r.wait?`<div class="mute">한 번에 ${r.cnt.perfect} · 다시 해서 ${r.cnt.good}${r.retry.length?` · 다시 걸린 마디: ${r.retry.join(', ')}`:''}</div>`:'')+
       (r.wait?'':`<div class="mute">정확 ${c.perfect||0} · 좋음 ${c.good||0} · 박자 어긋남 ${c.ok||0} · 혀치기 안 들림 ${c.notongue||0} · 다른 음 ${c.wrong||0} · 놓침 ${c.miss||0}`+
       (r.medOff!=null?` · 대체로 ${Math.abs(Math.round(r.medOff*1000))}ms ${r.medOff>0?'늦게':'빨리'}`:'')+`</div>`);
-    if(r.pred!=null){const d=Math.round(r.acc*100)-r.pred;S.preds.push({p:r.pred,a:Math.round(r.acc*100),t:Date.now()});save();h+=`<div>예상 ${r.pred} → 실제 ${Math.round(r.acc*100)} (${d>=0?'+':''}${d})</div>`}
+    if(r.pred!=null){const dd=Math.round(r.acc*100)-r.pred;S.preds.push({p:r.pred,a:Math.round(r.acc*100),t:Date.now()});save();h=h.replace('</span></div>',` · 예상 ${r.pred} → 실제 ${Math.round(r.acc*100)} (${dd>=0?'+':''}${dd})</span></div>`)}
     if(r.extra){
       const weakSrc=[...new Set(Object.keys(r.barAcc).filter(k=>r.barAcc[k]<0.75).map(k=>r.sg.pm[k].src))];
       const hard=r.extra.hard||[];const hit=hard.filter(x=>weakSrc.includes(x)),miss=weakSrc.filter(x=>!hard.includes(x)),over=hard.filter(x=>!weakSrc.includes(x));
       const L=a=>a.map(i=>r.sg.src[i].num).join(', ')||'없음';
-      h+=`<div style="margin-top:4px"><b>내 예측 vs 실제</b><div class="mute">읽을 때 막힌 마디: ${L(hard)} · 실제로 약했던 마디(75% 미만): ${L(weakSrc)}</div>`+
-        `<div class="mute">맞힌 예측: ${L(hit)} · 몰랐던 약점: ${L(miss)} · 걱정했지만 괜찮았던 곳: ${L(over)}</div></div>`;
+      h+=`<div class="mute" style="margin-top:6px"><b style="color:var(--ink)">내 예측 vs 실제</b> · 맞힌 예측 ${L(hit)} · 몰랐던 약점 ${L(miss)} · 괜한 걱정 ${L(over)}</div>`;
       S.reads.push({id:r.sg.id,hard,weak:weakSrc,diff:r.extra.diff,acc:Math.round(r.acc*100),t:Date.now()});if(S.reads.length>300)S.reads.shift();save();
     }
-    h+='</div>';
+    d+='</div>';
   }
   if(mode!=='mix'){
-    h+=`<div style="margin-top:8px"><b>마디별 최근 정확도</b> <span class="mute">누르면 그 마디부터 구간 훈련</span><div class="heat">`;
-    sg.pm.forEach((m,i)=>{const v=barAvg(sg,i);h+=`<span data-b="${i}" style="background:${v==null?'#bbb':heatColor(v)}">${m.label}</span>`});
-    h+='</div></div>';
+    d+=`<div style="margin-top:8px"><b>마디별 최근 정확도</b> <span class="mute">누르면 그 마디부터 구간 훈련</span><div class="heat">`;
+    sg.pm.forEach((m,i)=>{const v=barAvg(sg,i);d+=`<span data-b="${i}" style="background:${v==null?'#bbb':heatColor(v)}">${m.label}</span>`});
+    d+='</div></div>';
   }
-  h+=`<p class="mute">${nextTip(runs)}</p>`;
+  h+=`<details style="margin-top:6px"><summary>자세히</summary>${d}</details>`;
   box.innerHTML=h;
-  box.querySelectorAll('.heat span').forEach(s=>s.onclick=()=>{const b=+s.dataset.b,n=sg.pm.length,k=chunkSize(sg);const a=Math.max(0,Math.min(b,n-k));setRange(a,Math.min(n-1,a+k-1));mode='drill';renderModes();sheetScrollTo(a);window.scrollTo({top:0,behavior:'smooth'})});
+  box.querySelectorAll('.heat span').forEach(s=>s.onclick=()=>{const b=+s.dataset.b,n=sg.pm.length,k=chunkSize(sg);const a=Math.max(0,Math.min(b,n-k));setRange(a,Math.min(n-1,a+k-1));mode='drill';renderModes();sheetScrollTo(a);box.classList.add('hide')});
+  box.onclick=e=>{const a=e.target.dataset.act;if(!a||isBusy())return;
+    if(a==='close'){box.classList.add('hide');return}
+    if(a==='weak'){const pi=weakIdx[0],n=last.sg.pm.length;const k=Math.min(chunkSize(last.sg),last.to-last.from+1);const st=Math.max(last.from,Math.min(pi,last.to-k+1));setRange(st,Math.min(n-1,st+k-1));sheetScrollTo(st)}
+    if(a==='slow'||a==='fast'){const m=SG.meta;m.bpm=Math.max(30,Math.min(200,m.bpm+(a==='slow'?-4:4)));$('#bpmTxt').textContent=m.bpm;save()}
+    go()};
+  box.scrollIntoView({block:'nearest',behavior:'smooth'});
 }
 function nextTip(runs){
   const avg=runs.reduce((a,r)=>a+r.acc,0)/runs.length;
   const wrong=runs.reduce((a,r)=>a+(r.cnt.wrong||0),0),offs=runs.flatMap(r=>r.offs||[]);
   const tips=[];
   if(mode==='fluency')tips.push('1분에 맞힌 음 수가 늘면 성공이에요. 85% 밑으로 떨어지면 다음엔 한 단계 느리게.');
-  else if(avg>=0.9)tips.push('90% 넘었어요. 템포를 4 올리거나 "외워서"를 켜 보세요.');
-  else if(avg<0.6)tips.push('60% 아래예요. 템포를 8 내리고, 읽고·듣고·불기로 약한 마디만 다시 해 보세요.');
-  else tips.push('지금이 배우기 좋은 난이도(될 듯 말 듯)예요. 같은 템포로 한두 번 더.');
-  if(mode==='rlp'&&runs.some(r=>r.extra))tips.push('몰랐던 약점이 있으면 그 마디를 구간 훈련으로. 걱정했지만 괜찮았던 곳은 다음엔 덜 걱정해도 돼요.');
+  else if(avg>=0.9)tips.push('90% 넘었어요. 빠르게 +4로 가 보세요.');
+  else if(avg<0.6)tips.push('조금 어려워요. 느리게 −4나 틀린 마디만 다시.');
+  else tips.push('딱 배우기 좋은 난이도예요. 한두 번 더.');
   if(wrong>=3)tips.push('다른 음이 자주 났어요: 운지보다 입술(음 높이)일 가능성이 커요. 그 음을 길게 불어 "지금 내 음"으로 맞춰 보세요.');
   if(offs.length>=5){const m=[...offs].sort((a,b)=>a-b)[offs.length>>1];if(Math.abs(m)>0.08)tips.push(`전체가 ${Math.round(Math.abs(m)*1000)}ms ${m>0?'늦어요':'빨라요'}. 계속 그러면 박자 보정을 다시 해 주세요.`)}
   return tips.join(' ');
@@ -907,9 +956,9 @@ async function calibrate(){
   const sg={id:'cal',title:'박자 보정',notes,pm:[{src:0,t:0,len:4,beats:4,bt:4,label:'1'},{src:1,t:4,len:4,beats:4,bt:4,label:'2'}],src:[{num:'1'},{num:'2'}],fifths:0,trans:2,meta:{bars:{}}};
   const prevSG=SG;SG=sg;CAL=true;showPage('play',true);$('#sheet').classList.add('hide');$('#cv').classList.remove('hide');setTimeout(resizeCv,0);
   $('#modeWhy').textContent='클릭 8번에 맞춰 솔(0번)을 짧게 "투" 하고 불어 주세요. 첫 4번은 준비 박자예요.';
-  STOP=false;$('#goBtn').disabled=true;$('#stopBtn').disabled=false;
+  STOP=false;setBusy(true);
   const r=await runSegment({sg,from:0,to:1,bpm:80,guide:false,score:true,clicks:true,label:'보정',calib:true,wide:true});
-  $('#goBtn').disabled=false;$('#stopBtn').disabled=true;SG=prevSG;CAL=false;
+  setBusy(false);SG=prevSG;CAL=false;
   if(!r||r.offs.length<4){alert('소리를 충분히 못 들었어요. 휴대폰 가까이에서 다시 해 주세요.');showPage('home');return}
   S.calib=Math.max(0,Math.min(0.45,r.offs[r.offs.length>>1]));S.calibDone=true;save();
   alert(`보정 완료: ${Math.round(S.calib*1000)}ms (들은 ${r.offs.length}/8번)`);showPage('home');
@@ -972,7 +1021,7 @@ function renderOpts(){
   $('#oFade').textContent='외워서 '+(o.fade?'켬':'끔');$('#oFade').classList.toggle('on',o.fade);
   $('#oClick').textContent='메트로놈 '+(o.click?'켬':'끔');$('#oClick').classList.toggle('on',o.click);
   $('#oGuide').textContent='채점 중 가이드 소리 '+(o.guide?'켬(이어폰)':'끔');$('#oGuide').classList.toggle('on',o.guide);
-  $('#oLoop').textContent='구간 반복 '+(o.loop?'켬':'끔');$('#oLoop').classList.toggle('on',!!o.loop);
+  $('#oLoop').textContent=o.loop?'↻ 반복 켬':'↻ 반복';$('#oLoop').classList.toggle('on',!!o.loop);
   $('#oPk').textContent='음높이 줄 '+(o.pk?'켬':'끔');$('#oPk').classList.toggle('on',!!o.pk);
   $('#oZoom').textContent='글자 크기: '+(o.zoom?['작게','보통','크게','아주 크게'][o.zoom-1]:'자동');
 }
@@ -988,8 +1037,17 @@ $('#tm').onclick=()=>{const m=SG.meta;m.bpm=Math.max(30,m.bpm-4);$('#bpmTxt').te
 $('#tp').onclick=()=>{const m=SG.meta;m.bpm=Math.min(200,m.bpm+4);$('#bpmTxt').textContent=m.bpm;save()};
 $('#fromBar').onchange=()=>{const a=+$('#fromBar').value;if(+$('#toBar').value<a)$('#toBar').value=a;viewQ=SG.pm[a].t;sheetScrollTo(a)};
 $('#toBar').onchange=()=>{const b=+$('#toBar').value;if(+$('#fromBar').value>b)$('#fromBar').value=b};
-$('#goBtn').onclick=()=>go();
-$('#stopBtn').onclick=()=>{STOP=true;if(WAIT)finishWait();if($('#step').onclick){$('#step').querySelector('[data-k]')?.click()}};
+let RETRY=false,BUSY=false;
+function isBusy(){return BUSY||!!RUN||!!WAIT}
+function setBusy(b){BUSY=b;const g=$('#goBtn');g.textContent=b?'■ 멈춤':'▶ 시작';g.classList.toggle('stop',b);$('#retryBtn').title=b?'처음부터 다시':'다시'}
+function doStop(){STOP=true;if(WAIT)finishWait();if($('#step').onclick){$('#step').querySelector('[data-k]')?.click()}}
+$('#goBtn').onclick=()=>{if(isBusy())doStop();else go()};
+$('#stopBtn').onclick=doStop;
+$('#retryBtn').onclick=()=>{if(isBusy()){RETRY=true;doStop()}else go()};
+document.addEventListener('keydown',e=>{if($('#play').classList.contains('hide')||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;
+  if(e.code==='Space'){e.preventDefault();$('#goBtn').click()}else if(e.key==='r'||e.key==='R'){$('#retryBtn').click()}});
+$('#setBtn').onclick=()=>{$('#setPanel').classList.toggle('hide');$('#setBtn').classList.toggle('on')};
+$('#oCal').onclick=()=>{$('#setPanel').classList.add('hide');calibrate()};
 $('#backBtn').onclick=()=>{STOP=true;stepPanel('');showPage('home')};
 $('#calBtn').onclick=()=>calibrate();
 $('#lPrev').onclick=()=>{const ls=lessonsList(),i=ls.indexOf(curLesson());if(i>0){S.lesson=ls[i-1];save();renderHome()}};
