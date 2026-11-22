@@ -49,8 +49,8 @@ canvas{display:block;width:100%;height:270px;touch-action:none}
 select{font:inherit;padding:5px;border-radius:8px;border:1px solid var(--line);background:#fff}
 .modes{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .bar1{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.seg{display:flex;gap:4px;flex-wrap:wrap;flex:1}
-.seg button{border-radius:999px;padding:7px 13px;font-size:14px;background:transparent;border-color:transparent;color:var(--mute)}
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;flex:1;background:#ecebe5;border-radius:12px;padding:3px}
+.seg button{white-space:nowrap;border-radius:9px;padding:8px 2px;font-size:13.5px;background:transparent;border-color:transparent;color:var(--mute)}
 .seg button.on{background:var(--acc);color:#fff;font-weight:600}
 .seg .more{border:1px dashed var(--line)}
 .ghost{background:transparent;border-color:transparent;color:var(--mute);font-size:14px}
@@ -89,7 +89,7 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
 </style>
 </head>
 <body>
-<header><button id="backBtn" class="hide">←</button><h1 id="hdr">에튀드 플레이 · 트럼펫</h1><span class="mute" id="streak"></span></header>
+<header><button id="backBtn" class="hide">←</button><h1 id="hdr">에튀드 플레이 · 트럼펫</h1><span class="mute" id="streak"></span><button class="ghost hide" id="setBtn">설정</button></header>
 <main>
 <!-- HOME -->
 <section id="home">
@@ -122,7 +122,7 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
 
 <!-- PLAY -->
 <section id="play" class="hide">
-  <div class="bar1"><div class="seg" id="modes"></div><button class="ghost" id="setBtn">설정</button></div>
+  <div class="bar1"><div class="seg" id="modes"></div></div>
   <div class="whyrow"><div class="why" id="modeWhy"></div><div class="pred hide" id="predBox"></div></div>
   <div class="card hide" id="setPanel">
     <div class="ctl" id="opts">
@@ -730,13 +730,11 @@ function finishWait(){
 
 /* ================= 모드 ================= */
 const MODES={
-  rlp:{name:'단계 연습',why:''},
-  tune:{name:'음 맞추기',short:'맞는 음을 내면 다음 음으로 · <b style="color:#dc2626">빨강</b> 더 높게 · <b style="color:#2563eb">파랑</b> 더 낮게',why:'박자 없이 혼자 천천히. 노란 칸의 음을 불면 색으로 바로 알려 줘요: 빨강 = 더 높게, 파랑 = 더 낮게, 초록 = 맞아요. 맞는 음을 잠깐 유지하면 다음 음으로 넘어가요.'},
-  drill:{name:'구간 훈련',short:'약한 8박을 3분 동안, 템포는 알아서 조절',why:'가장 약한 조각(8박)을 3분 동안. 매 판 시작 전 박자 동안 그 조각을 눈으로 먼저 읽어요. 90%↑ 템포 +4, 70%↓ −4로 늘 될 듯 말 듯하게. 3·4번째 판은 외워서·메트로놈 없이.'},
-  game:{name:'끝까지',short:'멈추지 않고 끝까지',why:'고른 구간을 멈추지 않고 끝까지. 예상 정확도를 먼저 찍으면 끝나고 실제와 비교해 줘요.'},
-  fluency:{name:'유창성',short:'되는 곡을 점점 빠르게 3판',why:'이미 되는 곡을 빠르게: 깨끗하게 된 템포 → +8% → +15% 세 판, 틀려도 멈추지 않기. 기록은 1분에 맞힌 음 수.'},
-  mix:{name:'섞기',short:'여러 곡 조각을 섞어서 바로 불기',why:'이 레슨과 지난 레슨들의 8박 조각을 뒤섞어 처음 보는 것처럼 읽고 바로 불기. 당장은 어렵지만 오래 남아요.'},
-  listen:{name:'듣기만',short:'소리만 들어요(채점 없음)',why:'채점 없이 소리만. 읽고·듣고·불기의 ②만 따로 할 때.'}
+  rlp:{name:'단계 연습',short:'',why:'새 곡·새 마디 익히기. 순서를 골라요(읽기·듣기·불기, 바로 불기, 듣기만).'},
+  tune:{name:'음 맞추기',short:'박자 없이 맞는 음을 내면 다음 음으로 · <b style="color:#dc2626">빨강</b> 더 높게 · <b style="color:#2563eb">파랑</b> 더 낮게',why:'음높이(입술)만 따로. 노란 칸의 음을 맞게 내서 잠깐 유지하면 다음 음.'},
+  drill:{name:'구간 훈련',short:'가장 약한 8박을 3분 · 잘 되면 +4, 안 되면 −4로 템포 자동',why:'틀리는 곳 고치기. 될 듯 말 듯한 템포를 앱이 맞춰 줘요. 3·4번째 판은 외워서·메트로놈 없이.'},
+  fluency:{name:'유창성',short:'이미 되는 곡을 멈추지 않고 점점 빠르게 3판 · 기록: 1분에 맞힌 음',why:'이미 되는 곡을 생각 없이 술술 나오게. 깨끗하게 된 템포 → +8% → +15%, 틀려도 멈추지 않기.'},
+  mix:{name:'섞기',short:'이 레슨과 지난 3개 레슨의 8박 조각을 뒤섞어 바로 불기',why:'오래 남기기. 같은 걸 이어서 할 때보다 당장은 어렵지만 1~2주 뒤에 더 잘 남아요.'}
 };
 let mode='rlp';
 const FLOWS={
@@ -744,22 +742,17 @@ const FLOWS={
   lrp:{name:'듣기→읽기→불기',steps:['listen','read','play'],why:'처음 보는 리듬이 어려울 때. 먼저 귀에 넣고, 그 소리를 떠올리며 악보를 읽은 뒤 불기.'},
   rp:{name:'읽기→불기',steps:['read','play'],why:'듣지 않고 악보만 보고 불기. 초견(처음 보고 바로 읽기) 연습.'},
   lp:{name:'듣기→불기',steps:['listen','play'],why:'듣고 바로 따라 불기. 귀로 익히는 연습.'},
-  p:{name:'바로 불기',steps:['play'],why:'준비 없이 바로 불기. 이미 익숙한 곡 점검용.'}
+  p:{name:'바로 불기 (끝까지)',steps:['play'],why:'준비 없이 처음부터 끝까지. 점검용. 예상 점수를 먼저 찍을 수 있어요.'},
+  l:{name:'듣기만',steps:['listen'],why:'채점 없이 소리만 들어요.'}
 };
-const PRIMARY=['rlp','tune','game'];let moreOpen=false;
 function renderModes(){
-  const sec=Object.keys(MODES).filter(k=>!PRIMARY.includes(k));
-  let h=PRIMARY.map(k=>`<button class="${k===mode?'on':''}" data-m="${k}">${MODES[k].name}</button>`).join('');
-  if(moreOpen)h+=sec.map(k=>`<button class="${k===mode?'on':''}" data-m="${k}">${MODES[k].name}</button>`).join('')+`<button class="more" data-more="0">접기</button>`;
-  else h+=sec.includes(mode)?`<button class="on" data-more="1">${MODES[mode].name} ▾</button>`:`<button class="more" data-more="1">더보기 ▾</button>`;
-  $('#modes').innerHTML=h;
+  if(!MODES[mode])mode='rlp';
+  $('#modes').innerHTML=Object.entries(MODES).map(([k,v])=>`<button class="${k===mode?'on':''}" data-m="${k}" title="${v.why}">${v.name}</button>`).join('');
   const fl=S.opts.flow||'rlp';
-  $('#modeWhy').innerHTML=mode==='rlp'?`순서 <select id="flowSel">${Object.entries(FLOWS).map(([k,v])=>`<option value="${k}" ${k===fl?'selected':''}>${v.name}${k==='rlp'?' (추천)':''}</option>`).join('')}</select>`:(MODES[mode].short||'');
-  $('#modeWhy').title=mode==='rlp'?FLOWS[fl].why:MODES[mode].why;
-  $('#predBox').classList.toggle('hide',!(mode==='game'||mode==='fluency'));
+  $('#modeWhy').innerHTML=mode==='rlp'?`순서 <select id="flowSel">${Object.entries(FLOWS).map(([k,v])=>`<option value="${k}" ${k===fl?'selected':''}>${v.name}${k==='rlp'?' (추천)':''}</option>`).join('')}</select> <span>${FLOWS[fl].why.replace(/^추천\. /,'')}</span>`:MODES[mode].short;
+  $('#predBox').classList.toggle('hide',!(mode==='fluency'||(mode==='rlp'&&fl==='p')));
 }
-$('#modes').onclick=e=>{const t=e.target.closest('button');if(!t||isBusy())return;if(t.dataset.more!=null){moreOpen=t.dataset.more==='1';renderModes();return}
-  const m=t.dataset.m;if(m){mode=m;if(PRIMARY.includes(m))moreOpen=false;renderModes();$('#result').classList.add('hide')}};
+$('#modes').onclick=e=>{const t=e.target.closest('button');if(!t||isBusy())return;const m=t.dataset.m;if(m){mode=m;renderModes();$('#result').classList.add('hide')}};
 $('#modeWhy').onchange=e=>{if(e.target.id==='flowSel'){S.opts.flow=e.target.value;save();renderModes()}};
 let pred=null;
 function renderPred(){$('#predBox').innerHTML='<span class="mute">예상 점수</span>'+[50,60,70,80,90,100].map(p=>`<button class="chip ${pred===p?'on':''}" data-p="${p}">${p}</button>`).join('')}
@@ -808,7 +801,8 @@ async function go(){
   if(S.opts.view==='sheet')await renderSheet(sg);
   try{
     if(mode==='rlp'){
-      const bars=srcBarsIn(sg,from,to);const flow=FLOWS[S.opts.flow||'rlp'].steps;const total=flow.length;let heard=false,readDone=false;
+      const bars=srcBarsIn(sg,from,to);const fk=S.opts.flow||'rlp',flow=FLOWS[fk].steps;const total=flow.length;let heard=false,readDone=false,rep=0;
+      do{rep++;
       for(let si=0;si<total&&!STOP;si++){
         const st=flow[si],no=`${'①②③'[si]}`,last=si===total-1;
         const nextName=last?'':{read:'읽기',listen:'듣기',play:'불기 (채점)'}[flow[si+1]];
@@ -826,7 +820,7 @@ async function go(){
             stepPanel(`<h3>${no} 듣기${readDone?' · 내 예측과 비교':''}</h3><div class="mute">${readDone?'머릿속으로 그린 소리와 같은지 들어 보세요.':'악보를 보면서 소리와 박자를 귀에 넣어요.'}</div>`);
             setStatus('듣는 중');
             await runSegment({sg,from,to,bpm:base,guide:true,score:false,clicks:opt.clicks,label:'듣기'});
-            if(STOP)break;heard=true;
+            if(STOP)break;heard=true;if(total===1)break;
             const a=readDone
               ?await askStep({title:'예측과 비교하면?',text:'다르게 들린 마디가 있으면 눌러 주세요.',bars,choices:['거의 같았어요','몇 군데 달랐어요','많이 달랐어요'],buttons:[['next',`${'①②③'[si+1]||''} ${nextName}`],['again','한 번 더 듣기']]})
               :await askStep({title:'들어 봤어요',text:'익숙해질 때까지 더 들어도 돼요.',buttons:[['next',`${'①②③'[si+1]||''} ${nextName}`],['again','한 번 더 듣기']]});
@@ -835,10 +829,12 @@ async function go(){
         }else{
           stepPanel(`<h3>${total>1?no+' ':''}불기 · 채점</h3><div class="mute">박자 세는 동안 첫 음 운지를 준비하세요.</div>`);
           setStatus('부는 중');
-          const r=await runSegment({sg,from,to,bpm:base,guide:S.opts.guide,score:true,clicks:opt.clicks,fade:opt.fade,label:FLOWS[S.opts.flow||'rlp'].name});
-          if(r){if(readDone)r.extra=extra;runs.push(r)}
+          if(total===1)setStatus(S.opts.loop?`${rep}번째`:'');
+          const r=await runSegment({sg,from,to,bpm:base,guide:S.opts.guide,score:true,clicks:opt.clicks,fade:opt.fade,label:total===1&&S.opts.loop?`${rep}번째`:FLOWS[fk].name});
+          if(r){if(readDone)r.extra=extra;if(fk==='p'&&rep===1)r.pred=pred;runs.push(r)}
         }
       }
+      }while(total===1&&S.opts.loop&&!STOP);
       stepPanel('');
     }else if(mode==='tune'){
       let k=0;do{k++;setStatus(S.opts.loop?`음 맞추기 ${k}번째`:'음 맞추기');const r=await waitRun(sg,from,to);if(r)runs.push(r)}while(S.opts.loop&&!STOP);
@@ -866,7 +862,7 @@ async function go(){
     }else if(mode==='fluency'){
       const clean=sg.meta.best||base;
       for(const [i,m] of [[1,1],[2,1.08],[3,1.15]]){
-        if(STOP)break;const bpm=Math.round(clean*m);setStatus(`유창성 ${i}/3 · 템포 ${bpm}`);
+        if(STOP)break;const bpm=Math.round(clean*m);setStatus(`${i}/3판 · 템포 ${bpm} · 틀려도 멈추지 말고 계속`);
         const r=await runSegment({sg,from,to,bpm,guide:S.opts.guide,score:true,clicks:opt.clicks,label:`${i}판 · 템포 ${bpm}`});
         if(r){if(i===1)r.pred=pred;runs.push(r)}
       }
@@ -894,7 +890,7 @@ async function go(){
 function short(t){t=(t||'').replace(/\s*\([^)]*\)\s*$/,'');return t.length>24?t.slice(0,23)+'…':t}
 function pc(x){return Math.round(x*100)+'%'}
 function heatColor(v){return v>=0.9?'#16a34a':v>=0.75?'#65a30d':v>=0.6?'#ca8a04':'#dc2626'}
-let LASTRUNS=null;
+let LASTRUNS=null;const RECORDED=new WeakSet();
 function showResult(runs){
   LASTRUNS=runs;
   const box=$('#result');box.classList.remove('hide');
@@ -902,7 +898,13 @@ function showResult(runs){
   const avg=runs.reduce((a,r)=>a+r.acc,0)/runs.length;
   let h=`<div class="row" style="align-items:baseline;gap:10px"><span class="score" style="color:${heatColor(last.acc)}">${pc(last.acc)}</span><span class="mute">${last.wait?'한 번에 맞힌 비율':'정확도'}${runs.length>1?` · ${runs.length}판 평균 ${pc(avg)}`:''}${last.wait?'':` · 템포 ${last.bpm}`} · 최대 콤보 ${last.maxCombo}</span></div>`;
   const weakIdx=Object.keys(last.barAcc).map(Number).filter(k=>last.barAcc[k]<0.9).sort((a,b)=>last.barAcc[a]-last.barAcc[b]);
-  h+=`<div class="ra"><button class="pri" data-act="again">↺ 다시</button>${weakIdx.length?`<button data-act="weak">틀린 마디만 (${last.sg.pm[weakIdx[0]].label})</button>`:''}${last.wait?'':`<button data-act="slow">느리게 −4</button><button data-act="fast">빠르게 +4</button>`}<button class="ghost" data-act="close">닫기</button></div>`;
+  if(mode==='fluency'&&!last.partial){
+    const best=Math.round(Math.max(...runs.map(r=>r.cpm||0))),mt=last.sg.meta;mt.flu=mt.flu||[];
+    const prev=mt.flu.length?mt.flu[mt.flu.length-1].cpm:null,top=mt.flu.length?Math.max(...mt.flu.map(x=>x.cpm)):null;
+    if(!RECORDED.has(runs)){mt.flu.push({t:Date.now(),cpm:best,range:last.from+'-'+last.to});if(mt.flu.length>30)mt.flu.shift();save();RECORDED.add(runs)}
+    h+=`<div style="margin-top:6px"><b>1분에 맞힌 음 ${best}</b> <span class="mute">${prev==null?'첫 기록':`지난번 ${prev}${best>prev?` → <b style="color:#16a34a">+${best-prev}</b>`:''} · 최고 ${Math.max(top,best)}`} · 판별 ${runs.map(r=>Math.round(r.cpm)).join(' → ')}</span></div>`;
+  }
+  h+=`<div class="ra"><button class="pri" data-act="again">↺ 다시</button>${weakIdx.length?`<button data-act="weak">틀린 마디만 (${last.sg.pm[weakIdx[0]].label})</button>`:''}${last.wait||mode==='fluency'?'':`<button data-act="slow">느리게 −4</button><button data-act="fast">빠르게 +4</button>`}<button class="ghost" data-act="close">닫기</button></div>`;
   h+=`<p class="mute" style="margin:8px 0 0">${nextTip(runs)}</p>`;
   let d='';
   for(const r of runs){
@@ -976,7 +978,7 @@ async function openSong(id){
 }
 function showPage(p,calib){
   $('#home').classList.toggle('hide',p!=='home');$('#play').classList.toggle('hide',p!=='play');
-  $('#backBtn').classList.toggle('hide',p!=='play');
+  $('#backBtn').classList.toggle('hide',p!=='play');$('#setBtn').classList.toggle('hide',p!=='play');$('#streak').classList.toggle('hide',p==='play');$('#setPanel').classList.add('hide');
   if(p==='play'){
     const sg=SG;$('#hdr').textContent=short(sg.title);
     if(!calib){fillBars();$('#bpmTxt').textContent=sg.meta.bpm;renderModes();renderPred();renderOpts()}
