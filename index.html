@@ -121,6 +121,7 @@ body.mouthOn #pk{height:84px}
   </div>
   <div class="card">
     <div class="row"><h2 style="margin:0;flex:1" id="lessonTitle">레슨</h2><button id="lPrev">‹</button><button id="lNext">›</button></div>
+    <input id="q" type="search" placeholder="곡 검색: 제목·레슨 번호·조 (예: 11 에튀드, 자장가, G)" autocomplete="off" style="width:100%;margin-top:8px;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff">
     <div id="songs" style="margin-top:6px"></div>
     <details style="margin-top:8px"><summary>다른 레슨 고르기</summary><div class="lessons" id="lessons"></div></details>
   </div>
@@ -1142,19 +1143,33 @@ function ago(ts){if(!ts)return '아직 안 함';const d=Math.floor((Date.now()-t
 function streak(){let n=0;const d=new Date();for(let g=0;g<400;g++){const k=today(d);if(S.days[k]&&S.days[k].sec>60){n++;d.setDate(d.getDate()-1)}else{if(n===0&&k===today()){d.setDate(d.getDate()-1);continue}break}}return n}
 function lessonsList(){return [...new Set(S.order.map(id=>S.songs[id].lesson).filter(x=>x!=null))].sort((a,b)=>a-b)}
 function curLesson(){if(S.lesson==='none')return 'none';const ls=lessonsList();if(!ls.length)return null;if(S.lesson==null||!ls.includes(S.lesson))S.lesson=ls.includes(11)?11:ls[0];return S.lesson}
+
+/* ----- 곡 검색 (2026-11-25) ----- */
+const KO_ALIAS={'에튀드':'etude','연습곡':'etude','스케일':'scale','음계':'scale','테크닉':'technical','기술':'technical','자장가':'lullaby','브람스':'brahms','다장조':'key of c','사장조':'key of g','바장조':'key of f','라장조':'key of d','내림나장조':'key of bb','가장조':'key of a','마장조':'key of e','도':'key of c','솔':'key of g','파':'key of f','레':'key of d','미':'key of e','라':'key of a','시':'key of b','조':'key','변주':'variation','듀엣':'duet','왈츠':'waltz','행진곡':'march'};
+let QRY='';
+function songMatches(s,q){
+  const hay=(s.title+' lesson '+(s.lesson??'')).toLowerCase();
+  return q.toLowerCase().split(/\s+/).filter(Boolean).every(t=>{
+    if(/^\d+$/.test(t))return s.lesson===+t||new RegExp('#'+t+'\\b').test(hay);
+    if(KO_ALIAS[t])return hay.includes(KO_ALIAS[t])||hay.includes(t);
+    if(/^[a-g]$/.test(t))return hay.includes('key of '+t);
+    return hay.includes(t);
+  });
+}
 function renderHome(){
   const td=S.days[today()];
   $('#streak').textContent=`오늘 ${Math.round((td?.sec||0)/60)}분 · 연속 ${streak()}일`;
   const L=curLesson();
-  const ids=S.order.filter(id=>L==null?true:L==='none'?S.songs[id].lesson==null:S.songs[id].lesson===L);
-  $('#lessonTitle').textContent=L==null?'내 악보':L==='none'?'기타 악보':`Lesson ${L}`;
-  $('#lPrev').classList.toggle('hide',L==null||L==='none');$('#lNext').classList.toggle('hide',L==null||L==='none');
+  const q=QRY.trim();
+  const ids=q?S.order.filter(id=>songMatches(S.songs[id],q)):S.order.filter(id=>L==null?true:L==='none'?S.songs[id].lesson==null:S.songs[id].lesson===L);
+  $('#lessonTitle').textContent=q?`검색 결과 ${ids.length}곡`:L==null?'내 악보':L==='none'?'기타 악보':`Lesson ${L}`;
+  $('#lPrev').classList.toggle('hide',!!q||L==null||L==='none');$('#lNext').classList.toggle('hide',!!q||L==null||L==='none');
   $('#songs').innerHTML=ids.map(id=>{const s=S.songs[id];
-    return `<div class="song ${id===S.cur?'sel':''}"><div class="t"><b>${s.title.replace(/^Lesson \d+ · /,'')}</b><span class="mute">템포 ${s.bpm} · 깨끗하게 된 최고 ${s.best||'-'} · ${ago(s.last)}${s.page?` · 교재 PDF ${s.page}쪽`:''}${s.conf&&s.conf!=='high'?' · <span class="tag" title="옮겨 적을 때 애매한 곳이 있었어요. 이상하면 알려 주세요">확인 필요</span>':''}</span></div><button data-open="${id}" class="pri">열기</button></div>`}).join('')||'<p class="mute">악보가 없어요. 아래에서 가져와 주세요.</p>';
+    return `<div class="song ${id===S.cur?'sel':''}"><div class="t"><b>${q&&s.lesson!=null?`<span class="mute">L${s.lesson}</span> `:''}${s.title.replace(/^Lesson \d+ · /,'')}</b><span class="mute">템포 ${s.bpm} · 깨끗하게 된 최고 ${s.best||'-'} · ${ago(s.last)}${s.page?` · 교재 PDF ${s.page}쪽`:''}${s.conf&&s.conf!=='high'?' · <span class="tag" title="옮겨 적을 때 애매한 곳이 있었어요. 이상하면 알려 주세요">확인 필요</span>':''}</span></div><button data-open="${id}" class="pri">열기</button></div>`}).join('')||(q?'<p class="mute">맞는 곡이 없어요.</p>':'<p class="mute">악보가 없어요. 아래에서 가져와 주세요.</p>');
   const ls=lessonsList();
   $('#lessons').innerHTML=ls.map(l=>{const any=S.order.some(id=>S.songs[id].lesson===l&&S.songs[id].best);return `<button class="${l===L?'on':''} ${any?'done':''}" data-l="${l}">${l}</button>`}).join('')+(S.order.some(id=>S.songs[id].lesson==null)?`<button data-l="none">기타</button>`:'');
   $('#calTxt').textContent=S.calibDone?`지금 보정값 ${Math.round(S.calib*1000)}ms`:'아직 안 함 (기본 80ms). 처음 한 번 해 주세요.';
-  renderPlan(ids);
+  if(!q)renderPlan(ids);
 }
 function renderPlan(ids){
   const items=[];
@@ -1228,6 +1243,7 @@ $('#file').onchange=async e=>{
     save()}
   renderHome();alert(msgs.slice(0,12).join('\n'));e.target.value='';
 };
+$('#q').oninput=e=>{QRY=e.target.value;renderHome()};
 $('#songs').onclick=e=>{const o=e.target.dataset.open;if(o)openSong(o)};
 $('#plan').onclick=async e=>{const m=e.target.dataset.go;if(!m)return;await openSong(e.target.dataset.id||S.cur);mode=m;renderModes();
   if(m==='drill'){const w=weakest(SG);setRange(w[0],w[1]);setTimeout(()=>sheetScrollTo(w[0]),400)}};
