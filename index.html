@@ -88,6 +88,26 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
 .lessons button{min-width:40px;padding:4px 0;font-size:13px;border-radius:8px}
 .lessons button.done{background:#e8f2ee}
 .lessons button.on{background:var(--acc);color:#fff}
+
+/* 입 안 보기 (2026-11-25) */
+#mouth{background:#0d1117;color:#dfe6ee;border-top:1px solid var(--line);padding:6px 8px 7px}
+#mouth .mrow{display:grid;grid-template-columns:1.35fr 1fr .95fr;gap:8px;align-items:stretch}
+#mouth .mc{background:#121924;border:1px solid #1f2935;border-radius:12px;padding:6px 7px;min-width:0}
+#mouth .mk{font-size:11px;color:#8b97a6;display:flex;align-items:center;gap:4px;white-space:nowrap}
+#mouth .est{font-size:9.5px;padding:0 5px;border-radius:7px;border:1px dashed #a78bfa;color:#c4b5fd}
+#mouth svg{display:block;width:100%;height:auto}
+#mouth .mv{font-size:11.5px;color:#cfd8e3;text-align:center;margin-top:2px;white-space:nowrap}
+#mLad{display:flex;flex-direction:column;gap:2px;margin-top:3px}
+#mLad div{display:flex;justify-content:space-between;align-items:center;padding:1px 6px;border-radius:6px;background:#1a2330;font-size:11.5px;border:1.5px solid transparent;line-height:1.35}
+#mLad div i{font-style:normal;font-size:10px;color:#7d8896}
+#mLad div.tg{border-color:#f59e0b}
+#mLad div.lv{background:#2ec4b6;color:#062b27}#mLad div.lv i{color:#062b27}
+#mLad div.lv.hi{background:#2563eb;color:#fff}#mLad div.lv.lo{background:#dc2626;color:#fff}
+#mHint{font-size:13px;line-height:1.35;color:#e8eef5;margin-top:5px;min-height:18px}
+#mHint b{color:#f4a261}
+body.mouthOn #sheet{height:clamp(150px,calc(100dvh - 610px),440px)}
+body.mouthOn #pk{height:84px}
+#mouth .mc svg{max-height:96px}
 </style>
 </head>
 <body>
@@ -144,11 +164,30 @@ details summary{cursor:pointer;color:var(--mute);font-size:13px}
     <canvas id="cv" class="hide"></canvas>
     <div id="tune" class="hide"></div>
     <canvas id="pk" class="hide"></canvas>
+    <div id="mouth" class="hide">
+      <div class="mrow">
+        <div class="mc"><div class="mk">입 안 옆모습 <span class="est">추정</span></div>
+          <svg viewBox="0 0 160 118"><path d="M4 18 C 40 2,108 4,128 30 C 136 40,136 50,134 54 L 134 82 C 134 100,120 110,98 112 L 4 116 Z" fill="#1b2431" stroke="#3a4757"/>
+          <path d="M34 44 C 64 30,104 30,130 46" fill="none" stroke="#e9c46a" stroke-width="3"/>
+          <rect x="127" y="45" width="6" height="8" fill="#eee"/><rect x="127" y="69" width="6" height="8" fill="#eee"/>
+          <path id="mTongue" fill="#e76f7f" stroke="#ff8fa0"/>
+          <path id="mAir" fill="none" stroke="#2ec4b6" stroke-width="2" stroke-dasharray="4 3"/>
+          <ellipse id="mUp" cx="139" rx="6" ry="5" fill="#e07a7a"/><ellipse id="mLo" cx="139" rx="6" ry="5" fill="#e07a7a"/>
+          <path d="M144 44 L152 53 L160 54 M144 78 L152 69 L160 68" fill="none" stroke="#c9a227" stroke-width="3"/>
+          <text id="mTxt" x="40" y="104" font-size="10" fill="#fff"></text></svg></div>
+        <div class="mc"><div class="mk">입술 정면 <span class="est">추정</span></div>
+          <svg viewBox="0 0 110 100"><circle cx="55" cy="50" r="44" fill="#3a1d24" stroke="#c9a227" stroke-width="4"/>
+          <path id="mLipU" fill="#e8909a"/><path id="mLipL" fill="#d9788a"/><ellipse id="mHole" cx="55" cy="50" fill="#0d1117"/></svg>
+          <div class="mv" id="mHz">-</div></div>
+        <div class="mc"><div class="mk" id="mLadT">배음</div><div id="mLad"></div></div>
+      </div>
+      <div id="mHint"></div>
+    </div>
     <div id="big"></div>
     <div id="hud" class="hide"><span>정확도 <b id="hAcc">-</b></span><span>콤보 <b id="hCombo">0</b></span><span id="hJudge" class="mute"></span><span id="hLive" class="mute"></span></div>
   </div>
   <div id="dock">
-    <div class="drow"><span class="rng" id="rangeTxt"></span><button class="chip hide" id="rangeAll">전체로</button><button class="chip" id="oLoop">반복</button><button class="chip" id="oAuto" title="채점이 끝날 때마다: 90% 이상이면 +4, 70% 밑이면 −2">템포 자동</button><span class="mute" id="status" style="margin-left:auto"></span></div>
+    <div class="drow"><span class="rng" id="rangeTxt"></span><button class="chip hide" id="rangeAll">전체로</button><button class="chip" id="oLoop">반복</button><button class="chip" id="oMouth">입 안 보기</button><button class="chip" id="oAuto" title="채점이 끝날 때마다: 90% 이상이면 +4, 70% 밑이면 −2">템포 자동</button><span class="mute" id="status" style="margin-left:auto"></span></div>
     <div class="drow">
       <div class="tempo"><button id="tm" aria-label="느리게">−</button><b id="bpmTxt">60</b><button id="tp" aria-label="빠르게">+</button></div>
       <button id="retryBtn" class="big2">↺ 다시</button>
@@ -696,6 +735,64 @@ function drawLane(curQ){
 
 /* ================= 화면 갱신 루프 ================= */
 let bigTxt=null;
+
+/* ----- 입 안 보기 (2026-11-25): 음높이·세기는 실제 측정, 혀·입술·공기는 음역·세기로 짐작한 그림 ----- */
+const LOWER={'0':0,'2':1,'1':2,'12':3,'23':4,'13':5,'123':6};
+const MO={ph:0,dash:0,last:0,lad:''};
+function fingOf(m){return FING[Math.round(m)]??null}
+function partialOf(m,f){const lw=LOWER[f]??0;return 2**((m+lw-48)/12)}
+function partialMidi(k,f){return 48-(LOWER[f]??0)+12*Math.log2(k)}
+function koName(m){const sp=spell(Math.round(m));return nameOf(sp.step,sp.alt)}
+function letName(m){const sp=spell(Math.round(m));return sp.step+(sp.alt>0?'♯':sp.alt<0?'♭':'')+sp.oct}
+function nextOf(n){if(!n)return null;if(WAIT)return WAIT.notes[WAIT.idx+1]||null;if(RUN){const i=RUN.notes.indexOf(n);return i>=0?RUN.notes[i+1]||null:null}return null}
+function mouthHint(n,n2){
+  if(!n)return live&&live.mf!=null?'소리 나는 대로 따라 움직여요. 시작을 누르면 다음 음 안내가 나와요.':'시작을 누르거나 불어 보세요.';
+  if(!n2)return `<b>${koName(n.midi)}</b> 마지막 음이에요. 끝까지 공기 받치기.`;
+  const f1=fingOf(n.midi),f2=fingOf(n2.midi);if(f1==null||f2==null)return `다음 <b>${koName(n2.midi)}</b>`;
+  const k1=Math.round(partialOf(n.midi,f1)),k2=Math.round(partialOf(n2.midi,f2)),nm=`다음 <b>${koName(n2.midi)}</b>: `;
+  if(n2.midi===n.midi)return nm+'같은 음, 혀로 다시 "투"';
+  const up=k2>k1,dn=k2<k1,tongue=up?'혀를 "이" 쪽으로 올리고 공기 더 빠르게':'혀를 "아" 쪽으로 내리고 입술 힘 빼기';
+  if(f1===f2)return nm+`같은 밸브(${f1==='0'?'개방':f1+'번'})로 ${up?'한 칸 위':'한 칸 아래'} 배음 (립슬러) → ${tongue}`;
+  if(k1===k2)return nm+`밸브만 ${f2==='0'?'개방':f2+'번'}으로, 입은 그대로`;
+  return nm+`밸브 ${f2==='0'?'개방':f2+'번'} + ${up?'위':'아래'} 배음 → ${tongue}`;
+}
+function drawMouth(curQ){
+  const box=$('#mouth');if(box.classList.contains('hide'))return;
+  const now=performance.now();const dt=Math.min(0.1,(now-(MO.last||now))/1000);MO.last=now;
+  const n=currentTarget(curQ),n2=nextOf(n);
+  const on=live&&live.mf!=null;const ref=on?live.mf:(n?n.midi:null);
+  const p=ref==null?0.35:Math.max(0,Math.min(1,(ref-55)/29));
+  const db=live&&live.rms>0?20*Math.log10(live.rms):-80;const l=on?Math.max(0,Math.min(1,(db+50)/40)):0;
+  // 혀 (높은 음일수록 앞쪽이 입천장 쪽으로)
+  $('#mTongue').setAttribute('d',`M14 112 C 26 ${98-26*p}, 58 ${88-34*p}, 92 ${84-30*p} C 110 ${81-22*p}, 122 ${75-8*p}, 124 ${77-6*p} C 104 92, 62 102, 30 114 Z`);
+  $('#mTxt').textContent=ref==null?'':p<0.35?'혀 낮게 (아)':p<0.7?'혀 중간 (에)':'혀 높게 (이)';
+  const gap=on?(0.6+2.2*(1-p)+1.6*l):1.2;
+  $('#mUp').setAttribute('cy',(61-gap/2-5).toFixed(1));$('#mLo').setAttribute('cy',(61+gap/2+5).toFixed(1));
+  const air=$('#mAir');const ty=84-30*p-12;air.setAttribute('d',`M44 ${ty.toFixed(1)} C 80 ${(ty-4).toFixed(1)}, 112 ${(ty-2).toFixed(1)}, 160 61`);
+  air.style.opacity=on?1:0.25;MO.dash-=dt*(on?(30+90*p+60*l):6);air.setAttribute('stroke-dashoffset',MO.dash.toFixed(1));
+  // 입술 정면: 높을수록 구멍 작게, 셀수록 크게. 떨림은 눈에 보이게 느리게
+  const f=on?440*2**((live.mf-((RUN?RUN.sg:SG)?.trans??2)-69)/12):0;
+  MO.ph+=dt*(on?8+f/40:0);const vib=on?0.55+0.45*Math.abs(Math.sin(MO.ph)):1;
+  const rx=on?9+9*(1-p)+5*l:12,ry=on?(1.2+4.2*(1-p)+2.6*l)*vib:0.8;
+  const hole=$('#mHole');hole.setAttribute('rx',rx.toFixed(1));hole.setAttribute('ry',ry.toFixed(1));
+  const u=50-ry-0.5,d=50+ry+0.5;
+  $('#mLipU').setAttribute('d',`M18 50 C 30 ${u-15}, 80 ${u-15}, 92 50 C 80 ${u}, 30 ${u}, 18 50Z`);
+  $('#mLipL').setAttribute('d',`M18 50 C 30 ${d+15}, 80 ${d+15}, 92 50 C 80 ${d}, 30 ${d}, 18 50Z`);
+  $('#mHz').textContent=on?`입술 떨림 초당 ${Math.round(f)}번`:'소리 없음';
+  // 배음 사다리 (목표 음의 밸브 기준, 없으면 내 음 기준)
+  const fm=n?fingOf(n.midi):on?fingOf(live.mf):null;
+  let lad='';
+  if(fm!=null){const kt=n?Math.round(partialOf(n.midi,fm)):null;const kl=on?partialOf(live.mf,fm):null;const klr=kl!=null?Math.round(kl):null;
+    const onSeries=kl!=null&&Math.abs(live.mf-partialMidi(klr,fm))<0.7;
+    const kc=Math.max(4,Math.min(6,kt??klr??4));for(let k=kc+2;k>=kc-2;k--){const m=Math.round(partialMidi(k,fm));let c='';if(k===kt)c+=' tg';
+      if(onSeries&&k===klr){c+=' lv';if(n&&k===kt){const dd=live.mf-n.midi;if(Math.abs(dd)>0.35)c+=dd>0?' hi':' lo'}else if(n)c+=klr>kt?' hi':' lo'}
+      lad+=`<div class="${c.trim()}"><span>${koName(m)} <i>${letName(m)}${k===7?'↓':''}</i></span><i>${k}</i></div>`}
+    lad+=`|${fm}|${on&&!onSeries?'x':''}`}
+  if(lad!==MO.lad){MO.lad=lad;const [rows,ff,x]=lad.split('|');$('#mLad').innerHTML=rows||'';$('#mLadT').innerHTML=ff?`배음 · ${ff==='0'?'개방':ff+'번'}${x?' <span style="color:#f4a261">다른 밸브 음</span>':''}`:'배음'}
+  let h=mouthHint(n,n2);if(live&&live.rms>0.5)h='<b>소리가 너무 커서 마이크가 찌그러질 수 있어요.</b> 폰을 조금 멀리 두세요.';
+  const hb=$('#mHint');if(hb._h!==h){hb.innerHTML=h;hb._h=h}
+}
+function applyMouth(){const on=S.opts.mouth!==false;$('#mouth').classList.toggle('hide',!on);document.body.classList.toggle('mouthOn',on)}
 function showBig(t){if(t===bigTxt)return;bigTxt=t;const b=$('#big');b.textContent=t;b.style.opacity=t?1:0}
 function loop(){
   try{
@@ -706,7 +803,7 @@ function loop(){
       const curQ=RUN?RUN.startQ+(ctx.currentTime-(ctx.outputLatency||0)-RUN.songStart)/RUN.spq:viewQ;
       if(ctx&&micAn){const tg=currentTarget(curQ);TRACE.push({t:ctx.currentTime,mf:live&&live.mf!=null?live.mf:null,tgt:tg?tg.midi:null});if(TRACE.length>400)TRACE.splice(0,TRACE.length-400)}
       if(S.opts.view==='lane'||CAL)drawLane(curQ);
-      followTick(curQ);drawPk(curQ);
+      followTick(curQ);drawPk(curQ);drawMouth(curQ);
       if(RUN){const t=ctx.currentTime-RUN.songStart;if(t<0){const k=Math.ceil(-t/RUN.beatSec);showBig(k>0&&k<=RUN.cinBeats?String(k):'')}else showBig('')}
     }
   }catch(e){console.error(e)}
@@ -1078,10 +1175,12 @@ function renderOpts(){
   $('#oLoop').textContent=o.loop?'↻ 반복 켬':'↻ 반복';
   $('#oAuto').textContent=o.auto?'템포 자동 켬':'템포 자동';$('#oAuto').classList.toggle('on',!!o.auto);$('#oLoop').classList.toggle('on',!!o.loop);
   $('#oPk').textContent='음높이 줄 '+(o.pk?'켬':'끔');$('#oPk').classList.toggle('on',!!o.pk);
+  $('#oMouth').textContent=S.opts.mouth!==false?'입 안 보기 켬':'입 안 보기';$('#oMouth').classList.toggle('on',S.opts.mouth!==false);
   $('#oZoom').textContent='글자 크기: '+(o.zoom?['작게','보통','크게','아주 크게'][o.zoom-1]:'자동');
 }
 $('#oView').onclick=()=>{if(RUN)return;S.opts.view=S.opts.view==='lane'?'sheet':'lane';save();renderOpts();applyView();if(S.opts.view==='sheet')renderSheet(SG,true)};
 $('#oFing').onclick=()=>{if(RUN)return;S.opts.fing={auto:'on',on:'off',off:'auto'}[S.opts.fing];save();renderOpts();renderSheet(SG)};
+$('#oMouth').onclick=()=>{S.opts.mouth=S.opts.mouth===false;save();renderOpts();applyMouth()};
 $('#oAuto').onclick=()=>{S.opts.auto=!S.opts.auto;save();renderOpts()};
 $('#oLoop').onclick=()=>{S.opts.loop=!S.opts.loop;save();renderOpts()};
 $('#oPk').onclick=()=>{S.opts.pk=!S.opts.pk;save();renderOpts();if(micAn)showMicUI();else $('#pk').classList.add('hide')};
@@ -1137,7 +1236,7 @@ window.addEventListener('resize',()=>{if(!$('#play').classList.contains('hide')&
 /* 시험용 훅 */
 window.__ep={S,parseXML,addPieces,loadSong,openSong,go:m=>{mode=m;renderModes();return go()},setMode:m=>{mode=m;renderModes()},showPage,get run(){return RUN},get sg(){return SG},renderSheet:()=>renderSheet(SG,true)};
 
-(async()=>{await ensureBuiltin();save();showPage('home');requestAnimationFrame(loop)})();
+(async()=>{await ensureBuiltin();save();applyMouth();showPage('home');requestAnimationFrame(loop)})();
 </script>
 </body>
 </html>
